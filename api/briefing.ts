@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI, FunctionDeclaration, Type } from "@google/genai";
+import { GoogleGenAI, FunctionDeclaration, Type, FunctionResponsePart } from "@google/genai";
 
 // Define interfaces locally to avoid module resolution issues in serverless env
 interface StorySource {
@@ -145,22 +145,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const functionCalls = result.functionCalls;
             if (!functionCalls || functionCalls.length === 0) { break; }
             
-            const functionResponses = [];
+            const functionResponseParts: FunctionResponsePart[] = [];
             for (const call of functionCalls) {
                 if (call.name === 'searchWeb') {
-                    // FIX: Safely access query property from args to prevent build error.
                     const query = call.args?.query;
                     if (typeof query === 'string') {
                         const { searchResultsString, sources } = await searchWeb(query);
                         allSources.push(...sources);
-                        functionResponses.push({ name: 'searchWeb', response: { content: searchResultsString } });
+// FIX: The object being pushed to functionResponseParts has the correct structure for a FunctionResponsePart. The original error on this line was likely a misleading side-effect of the incorrect `chat.sendMessage` call that followed. Correcting the `sendMessage` call resolves this issue.
+                        functionResponseParts.push({
+                            functionResponse: {
+                                name: 'searchWeb',
+                                response: { content: searchResultsString },
+                            },
+                        });
                     }
                 }
             }
-            // FIX: Use 'message' property instead of 'parts' to send function responses, as required by the Chat API.
-            result = await chat.sendMessage({
-                message: functionResponses.map(fr => ({ functionResponse: fr })),
-            });
+            
+            // FIX: The sendMessage method for ai.chats.create expects a `SendMessageParameters` object,
+            // which requires the content to be passed via a `message` property. The array of function
+            // response parts is now correctly wrapped in an object.
+            result = await chat.sendMessage({ message: functionResponseParts });
         }
 
         const finishReason = result.candidates?.[0]?.finishReason;
