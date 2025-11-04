@@ -158,8 +158,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     }
                 }
             }
-            // FIX: The `functionResponses` must be wrapped in a `toolResponses` object when sending the message.
-            result = await chat.sendMessage({ toolResponses: { functionResponses } });
+            // FIX: The `toolResponses` property is not valid for `sendMessage`. Function responses should be sent as `Part` objects.
+            result = await chat.sendMessage({
+                parts: functionResponses.map(fr => ({ functionResponse: fr })),
+            });
         }
 
         const finishReason = result.candidates?.[0]?.finishReason;
