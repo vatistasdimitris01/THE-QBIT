@@ -101,7 +101,7 @@ const getBriefingPrompt = (date: Date, country?: string | null): string => {
     3.  'timestamp': Μια συμβολοσειρά με την πλήρη ημερομηνία και την τρέχουσα ώρα. Παράδειγμα: "Τρίτη, 16 Ιουλίου 2024, ${localTime}".
     4.  'body': Το κυρίως σώμα του άρθρου. Ενσωμάτωσε τις 7-10 ειδήσεις σε ένα ενιαίο κείμενο. Για κάθε είδηση, δημιούργησε μια ενότητα με έναν τίτλο σε μορφή markdown (π.χ., "### Ο τίτλος της είδησης εδώ"). Το κείμενο πρέπει να είναι ουδέτερο, διεισδυτικό και να ρέει φυσικά από τη μια είδηση στην άλλη. Χρησιμοποίησε '\\n\\n' για να διαχωρίσεις τις παραγράφους.
     5.  'outro': Μια σύντομη, έξυπνη ή στοχαστική πρόταση κλεισίματος. Μπορείς εναλλακτικά να χρησιμοποιήσεις ένα σχετικό απόφθεγμα από μια διάσημη προσωπικότητα. Νιώσε ελεύθερος να πρωτοτυπήσεις και να αποφύγεις τις επαναλαμβανόμενες φράσεις.
-    6.  'annotations': Ένας πίνακας (array) με 3-5 αντικείμενα. Κάθε αντικείμενο πρέπει να έχει ένα κλειδί 'term' (ένας όρος, ακρωνύμιο ή έννοια από το 'body' που χρήζει εξήγησης) και ένα κλειδί 'explanation' (μια σύντομη, σαφής εξήγηση του όρου). Επίλεξε όρους που είναι σημαντικοί για την κατανόηση των ειδήσεων.
+    6.  'annotations': Ένας πίνακας (array) με 3-5 αντικείμενα. Κάθε αντικείμενα πρέπει να έχει ένα κλειδί 'term' (ένας όρος, ακρωνύμιο ή έννοια από το 'body' που χρήζει εξήγησης) και ένα κλειδί 'explanation' (μια σύντομη, σαφής εξήγηση του όρου). Επίλεξε όρους που είναι σημαντικοί για την κατανόηση των ειδήσεων.
 
     Η τελική έξοδος πρέπει να είναι ένα ενιαίο, minified αντικείμενο JSON. Μην συμπεριλάβεις τίποτα άλλο στην τελική σου απάντηση.
     `;
@@ -130,7 +130,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const allSources: StorySource[] = [];
 
     try {
-        // FIX: The `tools` property should be inside the `config` object for chat creation.
         const chat = ai.chats.create({
             model: "gemini-2.5-flash",
             config: {
@@ -149,8 +148,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const functionResponses = [];
             for (const call of functionCalls) {
                 if (call.name === 'searchWeb') {
-                    const { query } = call.args;
-                    // FIX: Add type guard to ensure `query` is a string before calling `searchWeb`.
+                    // FIX: Safely access query property from args to prevent build error.
+                    const query = call.args?.query;
                     if (typeof query === 'string') {
                         const { searchResultsString, sources } = await searchWeb(query);
                         allSources.push(...sources);
@@ -158,9 +157,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     }
                 }
             }
-            // FIX: The `toolResponses` property is not valid for `sendMessage`. Function responses should be sent as `Part` objects.
+            // FIX: Use 'message' property instead of 'parts' to send function responses, as required by the Chat API.
             result = await chat.sendMessage({
-                parts: functionResponses.map(fr => ({ functionResponse: fr })),
+                message: functionResponses.map(fr => ({ functionResponse: fr })),
             });
         }
 
