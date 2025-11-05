@@ -1,5 +1,5 @@
-import React from 'react';
-import type { Story, Media } from '../types';
+import React, { useState, useEffect } from 'react';
+import type { Story } from '../types';
 import Annotation from './Annotation';
 
 interface StoryCardProps {
@@ -48,39 +48,68 @@ const renderSummaryWithAnnotations = (story: Story, allStories: Story[]) => {
     });
 };
 
-const MediaDisplay: React.FC<{ media: Media; altText: string }> = ({ media, altText }) => {
-    switch (media.type) {
-        case 'image':
-            return (
-                <div className="mb-6">
-                    <img src={media.src} alt={altText} className="w-full h-auto object-cover" />
-                </div>
-            );
-        case 'youtube':
-            return (
-                <div className="mb-6 video-container">
-                    <iframe
-                        src={`https://www.youtube.com/embed/${media.videoId}`}
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        title={altText}
-                    ></iframe>
-                </div>
-            );
-        default:
-            return null;
-    }
-}
-
 const StoryCard: React.FC<StoryCardProps> = ({ story, allStories }) => {
+    const [imageError, setImageError] = useState(false);
+
+    useEffect(() => {
+        setImageError(false);
+    }, [story.media?.src]);
+
+    const MediaDisplay: React.FC = () => {
+        if (!story.media) return null;
+
+        const { media } = story;
+        const altText = media.alt || story.title;
+
+        switch (media.type) {
+            case 'image':
+                if (imageError || !media.src) {
+                    return (
+                        <div className="mb-6 aspect-[16/9] bg-blue-50 flex items-center justify-center text-center p-4 rounded-lg">
+                            <div className="text-blue-800/70">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <p className="font-semibold mt-2 text-sm">This picture is no longer available.</p>
+                                <p className="text-xs">We apologize.</p>
+                            </div>
+                        </div>
+                    );
+                }
+                return (
+                    <div className="mb-6">
+                        <img 
+                            src={media.src} 
+                            alt={altText} 
+                            className="w-full h-auto object-cover" 
+                            onError={() => setImageError(true)} 
+                        />
+                    </div>
+                );
+            case 'youtube':
+                return (
+                    <div className="mb-6 video-container">
+                        <iframe
+                            src={`https://www.youtube.com/embed/${media.videoId}`}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            title={altText}
+                        ></iframe>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    }
+
   return (
     <article>
         {story.media?.alt && (
           <p className="text-sm text-stone-500 mb-2">{story.media.alt}</p>
         )}
         <h2 className="text-2xl font-bold font-serif text-stone-900 mb-4">{story.title}</h2>
-        {story.media && <MediaDisplay media={story.media} altText={story.media.alt || story.title} />}
+        <MediaDisplay />
         <div className="text-base leading-relaxed text-stone-700">
             {renderSummaryWithAnnotations(story, allStories)}
         </div>
