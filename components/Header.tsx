@@ -1,13 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 import NotificationBell from './NotificationBell';
-import Weather from './Weather';
 
 interface HeaderProps {
     country: string | null;
     onCountryChange: (country: string | null) => void;
+    weather?: {
+        description: string;
+        temperature: string;
+        icon: string;
+    };
+    localTime?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ country, onCountryChange }) => {
+const WeatherDisplay: React.FC<{ weather: HeaderProps['weather'], localTime: HeaderProps['localTime']}> = ({ weather, localTime }) => {
+    if (!weather || !localTime) {
+        return <div className="text-xs text-stone-500 font-sans hidden sm:block h-5"></div>; // Placeholder for layout consistency
+    }
+    return (
+        <div className="hidden sm:flex items-center gap-2 text-sm text-stone-700" title={`${weather.description} στην τοποθεσία σας`}>
+            <span>{weather.icon}</span>
+            <span className="font-medium">{weather.temperature}</span>
+            <span className="text-stone-300">|</span>
+            <span className="font-medium">{localTime}</span>
+        </div>
+    );
+};
+
+
+const Header: React.FC<HeaderProps> = ({ country, onCountryChange, weather, localTime }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({ country, onCountryChange }) => {
                     <h1 className="text-2xl font-bold tracking-tight font-serif uppercase">
                         THE QBIT
                     </h1>
-                    <Weather />
+                    <WeatherDisplay weather={weather} localTime={localTime} />
                 </div>
 
 

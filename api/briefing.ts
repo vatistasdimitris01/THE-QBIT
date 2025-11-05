@@ -18,6 +18,12 @@ interface BriefingContent {
   body: string;
   outro: string;
   annotations?: Annotation[];
+  weather?: {
+    description: string;
+    temperature: string;
+    icon: string;
+  };
+  localTime?: string;
 }
 interface Briefing {
   content: BriefingContent;
@@ -27,7 +33,6 @@ interface Briefing {
 // Check for environment variables
 if (!process.env.API_KEY || !process.env.CSE_API_KEY || !process.env.CSE_ID) {
     console.error("Missing required environment variables for API communication.");
-    // Don't throw here, as it would crash the deployment. Instead, let the handler fail.
 }
 
 const GEMINI_API_KEY = process.env.API_KEY;
@@ -86,31 +91,40 @@ const searchTool: FunctionDeclaration = {
     },
 };
 
-const getBriefingPrompt = (date: Date, country?: string | null): string => {
+const getBriefingPrompt = (date: Date, country?: string | null, lat?: string, lon?: string): string => {
     const formattedDate = new Intl.DateTimeFormat('fr-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date); // YYYY-MM-DD
     const localTime = new Intl.DateTimeFormat('el-GR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Athens' }).format(new Date());
+
+    let locationInstructions = '';
+    if (lat && lon) {
+        locationInstructions = `
+        **Οδηγίες Τοποθεσίας**: Ο χρήστης βρίσκεται στο latitude ${lat} και longitude ${lon}. Χρησιμοποίησε αυτή την πληροφορία για να συμπληρώσεις τα πεδία 'weather' και 'localTime'.
+        Επίσης, ενσωμάτωσε διακριτικά τις καιρικές συνθήκες στον χαιρετισμό ('greeting'). Για παράδειγμα: "Καλημέρα σας σε αυτή την ηλιόλουστη ημέρα."
+        `;
+    }
 
     return `
     Λειτούργησε ως παγκόσμιας κλάσης αρχισυντάκτης για ένα μινιμαλιστικό, ειδησεογραφικό brief με επίκεντρο το κείμενο, που ονομάζεται THE QBIT.
     Ο στόχος σου είναι να εντοπίσεις τις 7-10 πιο σημαντικές και επιδραστικές ${country ? `ειδήσεις από την ${country}` : 'παγκόσμιες ειδήσεις'} για τη συγκεκριμένη ημερομηνία: ${formattedDate}.
     
     **Σημαντικό**: Πρέπει **οπωσδήποτε** να χρησιμοποιήσεις το εργαλείο 'searchWeb' για να βρεις σχετικά ειδησεογραφικά άρθρα. Διατύπωσε ένα κατάλληλο ερώτημα αναζήτησης (query) για να βρεις τις κορυφαίες ειδήσεις.
-
+    ${locationInstructions}
     Αφού λάβεις τα αποτελέσματα της αναζήτησης, δημιούργησε ένα ενιαίο, συνεκτικό άρθρο.
-    Η τελική σου απάντηση πρέπει να είναι ένα αντικείμενο JSON με τα εξής κλειδιά: 'greeting', 'intro', 'timestamp', 'body', 'outro', και 'annotations'.
+    Η τελική σου απάντηση πρέπει να είναι ένα αντικείμενο JSON με τα εξής κλειδιά: 'greeting', 'intro', 'timestamp', 'body', 'outro', 'annotations' ${lat && lon ? ", 'weather', 'localTime'" : ""}.
 
-    1.  'greeting': Ένας φιλικός, δημιουργικός και κατάλληλος για την ώρα της ημέρας χαιρετισμός (η τρέχουσα ώρα είναι ${localTime}). Μπορείς να χρησιμοποιήσεις κάτι κλασικό όπως 'Καλημέρα' ή να σκεφτείς κάτι πιο πρωτότυπο.
+    1.  'greeting': Ένας φιλικός, δημιουργικός και κατάλληλος για την ώρα της ημέρας χαιρετισμός (η τρέχουσα ώρα Αθήνας είναι ${localTime}).
     2.  'intro': Μια σύντομη εισαγωγική πρόταση, π.χ., "Το μόνο που χρειάζεσαι να διαβάσεις σήμερα.".
-    3.  'timestamp': Μια συμβολοσειρά με την πλήρη ημερομηνία και την τρέχουσα ώρα. Παράδειγμα: "Τρίτη, 16 Ιουλίου 2024, ${localTime}".
+    3.  'timestamp': Μια συμβολοσειρά με την πλήρη ημερομηνία και την τρέχουσα ώρα Αθήνας. Παράδειγμα: "Τρίτη, 16 Ιουλίου 2024, ${localTime}".
     4.  'body': Το κυρίως σώμα του άρθρου. Ενσωμάτωσε τις 7-10 ειδήσεις σε ένα ενιαίο κείμενο. Για κάθε είδηση, δημιούργησε μια ενότητα με έναν τίτλο σε μορφή markdown (π.χ., "### Ο τίτλος της είδησης εδώ"). Το κείμενο πρέπει να είναι ουδέτερο, διεισδυτικό και να ρέει φυσικά από τη μια είδηση στην άλλη. Χρησιμοποίησε '\\n\\n' για να διαχωρίσεις τις παραγράφους.
     5.  'outro': Μια σύντομη, έξυπνη ή στοχαστική πρόταση κλεισίματος. Μπορείς εναλλακτικά να χρησιμοποιήσεις ένα σχετικό απόφθεγμα από μια διάσημη προσωπικότητα. Νιώσε ελεύθερος να πρωτοτυπήσεις και να αποφύγεις τις επαναλαμβανόμενες φράσεις.
     6.  'annotations': Ένας πίνακας (array) με 15-25 αντικείμενα. Για κάθε αντικείμενο, πρέπει να προσδιορίσεις βασικούς όρους, φράσεις, ονόματα ή έννοιες από το κείμενο του 'body'. Κάθε αντικείμενο πρέπει να έχει ένα 'term' (το ακριβές κείμενο από το body) και ένα 'importance' (έναν αριθμό από 1 έως 3, όπου το 3 είναι το πιο σημαντικό). Για τους 3-5 πιο σύνθετους όρους, πρέπει επίσης να παρέχεις μια σύντομη 'explanation'. Για όλους τους άλλους όρους, η ιδιότητα 'explanation' πρέπει να παραλειφθεί.
+    7.  'weather' (αν υπάρχει τοποθεσία): Ένα αντικείμενο με τρία κλειδιά: 'description' (μια σύντομη περιγραφή του καιρού), 'temperature' (η θερμοκρασία σε μορφή string, π.χ., "25°C"), και 'icon' (ένα κατάλληλο emoji για τον καιρό).
+    8.  'localTime' (αν υπάρχει τοποθεσία): Μια συμβολοσειρά (string) με την τρέχουσα τοπική ώρα του χρήστη σε μορφή HH:MM.
 
     Η τελική έξοδος πρέπει να είναι ένα ενιαίο, minified αντικείμενο JSON. Μην συμπεριλάβεις τίποτα άλλο στην τελική σου απάντηση.
     `;
 }
 
-// FIX: Corrected typo 'VerrcelRequest' to 'VercelRequest'.
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!GEMINI_API_KEY || !CSE_API_KEY || !CSE_ID) {
         return res.status(500).json({ error: "Server-side API keys are not configured." });
@@ -121,7 +135,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).end('Method Not Allowed');
     }
 
-    const { date: dateString, country: countryString } = req.query;
+    const { date: dateString, country: countryString, lat, lon } = req.query;
 
     if (!dateString || typeof dateString !== 'string') {
         return res.status(400).json({ error: 'Date parameter is required.' });
@@ -134,16 +148,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const allSources: StorySource[] = [];
 
     try {
+        const tools: any[] = [{ functionDeclarations: [searchTool] }];
+        const config: any = {
+            temperature: 0.5,
+            tools: tools,
+        };
+
+        if (lat && lon && typeof lat === 'string' && typeof lon === 'string') {
+            tools.push({ googleMaps: {} });
+            config.toolConfig = {
+                retrievalConfig: {
+                    latLng: {
+                        latitude: parseFloat(lat),
+                        longitude: parseFloat(lon),
+                    }
+                }
+            };
+        }
+
         const chat = ai.chats.create({
             model: "gemini-2.5-flash",
-            config: {
-                temperature: 0.5,
-                tools: [{ functionDeclarations: [searchTool] }],
-            },
+            config: config,
         });
 
-        const prompt = getBriefingPrompt(date, country);
-        // FIX: Argument of type 'string' is not assignable to parameter of type 'SendMessageParameters'. The `sendMessage` method expects an object with a `message` property.
+        const prompt = getBriefingPrompt(date, country, lat as string, lon as string);
         let result = await chat.sendMessage({ message: prompt });
         
         while (true) {
@@ -167,14 +195,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 }
             }
             
-            // FIX: Argument of type 'Part[]' is not assignable to parameter of type 'SendMessageParameters'. The `sendMessage` method expects an object with a `message` property.
             result = await chat.sendMessage({ message: functionResponseParts });
-        }
-
-        const finishReason = result.candidates?.[0]?.finishReason;
-        if (finishReason === 'UNEXPECTED_TOOL_CALL') {
-            console.error("AI stopped due to an unexpected tool call. Full response:", JSON.stringify(result, null, 2));
-            return res.status(500).json({ error: "Η AI αντιμετώπισε ένα σφάλμα κατά την αναζήτηση ειδήσεων. Παρακαλώ, δοκιμάστε ξανά." });
         }
 
         rawResponseText = result.text;
@@ -198,6 +219,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ).values());
         finalBriefing.sources = uniqueSources;
 
+        res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300'); // Cache for 1 min, stale for 5 mins
         return res.status(200).json(finalBriefing);
 
     } catch (error) {

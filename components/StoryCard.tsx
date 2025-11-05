@@ -24,7 +24,8 @@ const renderSummaryWithAnnotations = (story: Story) => {
                         for (let i = 0; i < splitParts.length; i++) {
                             newResult.push(splitParts[i]);
                             if (i < splitParts.length - 1) {
-                                newResult.push(<Annotation key={`${story.id}-${anno.term}-${i}`} term={anno.term} explanation={anno.explanation} />);
+                                // Fix: Pass the 'importance' prop to the Annotation component, as it is a required prop.
+                                newResult.push(<Annotation key={`${story.id}-${anno.term}-${i}`} term={anno.term} explanation={anno.explanation} importance={anno.importance} />);
                             }
                         }
                     } else {

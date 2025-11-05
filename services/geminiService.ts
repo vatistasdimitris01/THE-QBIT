@@ -1,10 +1,14 @@
 import type { Briefing } from '../types';
 
-export async function getDailyBriefing(date: Date, country: string | null): Promise<{ briefing: Briefing, fromCache: boolean }> {
+export async function getDailyBriefing(date: Date, country: string | null, location: { lat: number, lon: number } | null): Promise<{ briefing: Briefing, fromCache: boolean }> {
     const params = new URLSearchParams();
     params.append('date', date.toISOString());
     if (country) {
         params.append('country', country);
+    }
+    if (location) {
+        params.append('lat', location.lat.toString());
+        params.append('lon', location.lon.toString());
     }
 
     try {

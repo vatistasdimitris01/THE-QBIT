@@ -8,6 +8,7 @@ import { getDailyBriefing } from './services/geminiService';
 import type { Briefing } from './types';
 
 type AppStatus = 'loading' | 'error' | 'success';
+type Location = { lat: number, lon: number } | null;
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<AppStatus>('loading');
@@ -16,8 +17,36 @@ const App: React.FC = () => {
   const [loadingMessage, setLoadingMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [country, setCountry] = useState<string | null>('Ελλάδα');
+  const [location, setLocation] = useState<Location>(null);
+  const [isLocationReady, setIsLocationReady] = useState(false);
+
+  useEffect(() => {
+    // Get user's location once on initial load.
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          });
+          setIsLocationReady(true);
+        },
+        () => {
+          console.warn("Location access denied. Proceeding without weather.");
+          setLocation(null);
+          setIsLocationReady(true);
+        },
+        { timeout: 5000 }
+      );
+    } else {
+      setIsLocationReady(true); // Geolocation not supported, proceed without it.
+    }
+  }, []);
 
   const loadNews = useCallback(async (newCountry: string | null) => {
+    // Don't load news until the location attempt is complete.
+    if (!isLocationReady) return;
+
     setStatus('loading');
     setBriefing(null);
     setError(null);
@@ -26,7 +55,7 @@ const App: React.FC = () => {
 
     const startTime = performance.now();
     try {
-      const { briefing: fetchedBriefing } = await getDailyBriefing(new Date(), newCountry);
+      const { briefing: fetchedBriefing } = await getDailyBriefing(new Date(), newCountry, location);
       
       if (!fetchedBriefing.content.body) {
         setError("Δεν βρέθηκαν ειδήσεις για σήμερα. Παρακαλώ δοκιμάστε ξανά αργότερα.");
@@ -54,7 +83,7 @@ const App: React.FC = () => {
         const endTime = performance.now();
         setLoadTime(Math.round(endTime - startTime));
     }
-  }, []);
+  }, [isLocationReady, location]);
   
   useEffect(() => {
     const setupServiceWorker = () => {
@@ -73,14 +102,16 @@ const App: React.FC = () => {
     };
     
     setupServiceWorker();
-    loadNews(country);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // This effect runs when isLocationReady becomes true, or when the country changes.
+    loadNews(country);
+  }, [country, loadNews]);
+
 
   const handleCountryChange = (newCountry: string | null) => {
     setCountry(newCountry);
-    loadNews(newCountry);
   };
 
   const renderContent = () => {
@@ -115,6 +146,8 @@ const App: React.FC = () => {
       <Header 
         country={country}
         onCountryChange={handleCountryChange}
+        weather={briefing?.content.weather}
+        localTime={briefing?.content.localTime}
       />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 flex-grow w-full">
         {renderContent()}

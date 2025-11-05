@@ -25,6 +25,12 @@ export interface BriefingContent {
   body: string; // A single string, potentially with markdown-like formatting
   outro: string;
   annotations?: Annotation[];
+  weather?: {
+    description: string;
+    temperature: string;
+    icon: string;
+  };
+  localTime?: string;
 }
 
 export interface Briefing {
