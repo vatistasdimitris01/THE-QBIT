@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
             <p className="text-stone-400 mb-6 max-w-md mx-auto">Η καθημερινή σας ενημέρωση για τις ειδήσεις που έχουν σημασία, με την ταχύτητα της τεχνητής νοημοσύνης.</p>
         </div>
         <div className="mt-12 pt-8 border-t border-stone-700 text-center text-xs text-stone-500">
-            <p>&copy; {new Date().getFullYear()} THE QBIT. Με επιφύλαξη παντός δικαιώματος.</p>
+            <p>© 2025 THE QBIT. Με επιφύλαξη παντός δικαιώματος.</p>
             <div className="mt-4 flex justify-center items-center gap-4 text-stone-400 text-sm">
                 <span>Made by vatistasdimitris</span>
                 <a href="https://www.instagram.com/vatistasdimitris/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-white transition-colors">

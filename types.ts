@@ -9,6 +9,7 @@ export interface Media {
   type: 'image' | 'youtube';
   src?: string; // For images
   videoId?: string; // For YouTube videos
+  alt?: string; // Description of the media
 }
 
 export interface Story {

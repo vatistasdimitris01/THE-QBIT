@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Story } from '../types';
+import type { Story, Media } from '../types';
 import Annotation from './Annotation';
 
 interface StoryCardProps {
@@ -48,40 +48,39 @@ const renderSummaryWithAnnotations = (story: Story, allStories: Story[]) => {
     });
 };
 
-const MediaDisplay: React.FC<{ story: Story }> = ({ story }) => {
-    if (!story.media) {
-        return <div className="mb-6 text-sm text-center italic text-stone-500 py-2 border-b border-stone-200">Χωρίς πολυμέσα</div>;
-    }
-
-    switch (story.media.type) {
+const MediaDisplay: React.FC<{ media: Media; altText: string }> = ({ media, altText }) => {
+    switch (media.type) {
         case 'image':
             return (
-                <div className="mb-6 rounded-lg overflow-hidden border border-stone-200">
-                    <img src={story.media.src} alt={story.title} className="w-full h-auto object-cover" />
+                <div className="mb-6">
+                    <img src={media.src} alt={altText} className="w-full h-auto object-cover" />
                 </div>
             );
         case 'youtube':
             return (
-                <div className="mb-6 video-container rounded-lg overflow-hidden border border-stone-200">
+                <div className="mb-6 video-container">
                     <iframe
-                        src={`https://www.youtube.com/embed/${story.media.videoId}`}
+                        src={`https://www.youtube.com/embed/${media.videoId}`}
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
-                        title={story.title}
+                        title={altText}
                     ></iframe>
                 </div>
             );
         default:
-            return <div className="mb-6 text-sm text-center italic text-stone-500 py-2 border-b border-stone-200">Χωρίς πολυμέσα</div>;
+            return null;
     }
 }
 
 const StoryCard: React.FC<StoryCardProps> = ({ story, allStories }) => {
   return (
     <article>
-        <MediaDisplay story={story} />
+        {story.media?.alt && (
+          <p className="text-sm text-stone-500 mb-2">{story.media.alt}</p>
+        )}
         <h2 className="text-2xl font-bold font-serif text-stone-900 mb-4">{story.title}</h2>
+        {story.media && <MediaDisplay media={story.media} altText={story.media.alt || story.title} />}
         <div className="text-base leading-relaxed text-stone-700">
             {renderSummaryWithAnnotations(story, allStories)}
         </div>

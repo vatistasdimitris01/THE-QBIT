@@ -76,10 +76,11 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
                 <p className="text-base text-stone-800 leading-relaxed">{content.dailySummary}</p>
             </header>
 
-            <main className="space-y-12">
+            <main>
                 {content.stories.map((story, index) => (
                     <div key={story.id} ref={el => { storyRefs.current[index] = el; }}>
                         <StoryCard story={story} allStories={content.stories} />
+                        {index < content.stories.length - 1 && <hr className="my-12 border-stone-200" />}
                     </div>
                 ))}
             </main>

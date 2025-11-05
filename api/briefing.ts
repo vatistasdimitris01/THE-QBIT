@@ -10,6 +10,7 @@ interface Media {
   type: 'image' | 'youtube';
   src?: string;
   videoId?: string;
+  alt?: string;
 }
 interface Annotation {
   term: string;
@@ -104,19 +105,16 @@ const getBriefingPrompt = (date: Date, country?: string | null, category?: strin
     
     let selectionCriteria: string;
     let searchTarget: string;
-    let searchQuerySuggestion: string;
-
+    
     if (category) {
         searchTarget = `την κατηγορία "${category}"`;
         selectionCriteria = `Επίλεξε τις 3 **σημαντικότερες** και πιο ενδιαφέρουσες ειδήσεις από την κατηγορία **${category}**.`;
-        searchQuerySuggestion = country === 'Ελλάδα' ? `ελληνικές ειδήσεις ${category.toLowerCase()} ${formattedDate}` : `${category.toLowerCase()} world news ${formattedDate}`;
     } else {
         searchTarget = country === 'Ελλάδα' ? 'την Ελλάδα' : 'τον κόσμο';
         selectionCriteria = `Επίλεξε ακριβώς 3 από τις πιο **σημαντικές** ειδήσεις. Η επιλογή σου **πρέπει** να περιλαμβάνει:
         - Την 1 κορυφαία είδηση από την κατηγορία "Politics".
         - Την 1 κορυφαία είδηση από την κατηγορία "Economy".
         - Την 1 σημαντικότερη είδηση από οποιαδήποτε άλλη κατηγορία.`;
-        searchQuerySuggestion = country === 'Ελλάδα' ? `σημαντικότερες ελληνικές ειδήσεις ${formattedDate}` : `world news ${formattedDate}`;
     }
 
     return `
@@ -126,14 +124,13 @@ const getBriefingPrompt = (date: Date, country?: string | null, category?: strin
     **Βασικές Οδηγίες**:
     1.  **Χρήση Εργαλείου**: Πρέπει **οπωσδήποτε** να χρησιμοποιήσεις το εργαλείο 'searchWeb' για να βρεις τα άρθρα. Βάσισε ολόκληρη την απάντησή σου **αποκλειστικά** στα αποτελέσματα της αναζήτησης.
     2.  **Επιλογή Ειδήσεων**: ${selectionCriteria}
-    3.  **Εύρεση Πολυμέσων (Media)**: Για κάθε είδηση, προσπάθησε να βρεις **ένα** σχετικό οπτικό στοιχείο (εικόνα ή βίντεο από YouTube).
-        *   Αν βρεις καλή εικόνα, βάλε στο 'media': \`{ "type": "image", "src": "URL_EIKONAS" }\`
-        *   Αν βρεις σχετικό βίντεο YouTube, βάλε στο 'media': \`{ "type": "youtube", "videoId": "YOUTUBE_VIDEO_ID" }\`
+    3.  **Εύρεση Πολυμέσων (Media)**: Για κάθε είδηση, προσπάθησε να βρεις **ένα** σχετικό οπτικό στοιχείο.
+        *   **Εικόνες**: Πρέπει να χρησιμοποιείς **πραγματικές, δημόσια προσβάσιμες διευθύνσεις URL εικόνων** από τα αποτελέσματα αναζήτησης. **ΜΗΝ χρησιμοποιείς placeholder URLs** όπως 'example.com'.
+        *   Για κάθε εικόνα, πρέπει να παρέχεις ένα σύντομο, περιγραφικό κείμενο στο πεδίο 'alt'.
+        *   **Βίντεο**: Αν βρεις σχετικό βίντεο YouTube, χρησιμοποίησε το videoId.
         *   Αν δεν βρεις τίποτα κατάλληλο, άφησε το πεδίο 'media' ως \`null\`.
     4.  **Συνοπτική Ανάλυση**: Για κάθε είδηση, γράψε μια **σύντομη και περιεκτική ανάλυση 1-2 παραγράφων**.
-    5.  **Annotations & Cross-Linking**:
-        *   Για κάθε είδηση, εντόπισε 4-5 όρους-κλειδιά. Η 'explanation' πρέπει να είναι **1-2 σύντομες προτάσεις**.
-        *   **ΣΗΜΑΝΤΙΚΟ**: Αν ένας όρος σε μια είδηση συνδέεται άμεσα με μια άλλη από τις 3 ειδήσεις που επέλεξες, πρόσθεσε το πεδίο \`"crossLinkStoryTitle": "ΑΚΡΙΒΗΣ_ΤΙΤΛΟΣ_ΤΗΣ_ΑΛΛΗΣ_ΕΙΔΗΣΗΣ"\`. Αλλιώς, παράλειψε αυτό το πεδίο.
+    5.  **Annotations**: Για κάθε είδηση, εντόπισε 4-5 όρους-κλειδιά. Η 'explanation' πρέπει να είναι **1-2 σύντομες προτάσεις**.
 
     **Δομή Απάντησης JSON**:
     Η τελική σου απάντηση πρέπει να είναι ένα αντικείμενο JSON με τα εξής κλειδιά: 'greeting', 'intro', 'dailySummary', 'stories', 'outro'.
@@ -142,8 +139,8 @@ const getBriefingPrompt = (date: Date, country?: string | null, category?: strin
     3.  'dailySummary': Μια παράγραφος που ξεκινά με την ημέρα, την ημερομηνία, και μια σταθερή ώρα (π.χ., 06:00), και συνοψίζει τις 3 επικεφαλίδες.
     4.  'stories': Ένας πίνακας με **ακριβώς 3** αντικείμενα ειδήσεων. Κάθε αντικείμενο πρέπει να έχει:
         *   'category', 'title', 'summary' (με '\\n'), 'importance' (1-3).
-        *   'media': Το αντικείμενο media (image/youtube) ή null.
-        *   'annotations': Ένας πίνακας με 4-5 αντικείμενα, το καθένα με 'term', 'importance' (1-3), 'explanation', και προαιρετικά 'crossLinkStoryTitle'.
+        *   'media': Αντικείμενο με 'type' ('image'/'youtube'), 'src'/'videoId', και 'alt', ή null.
+        *   'annotations': Ένας πίνακας με 4-5 αντικείμενα, το καθένα με 'term', 'importance' (1-3), 'explanation'.
     5.  'outro': Μια σύντομη, στοχαστική πρόταση κλεισίματος. Παράδειγμα: "Και κάπως έτσι ξεκίνησε άλλη μια ${dayOfWeek}."
 
     Η τελική έξοδος πρέπει να είναι ένα ενιαίο, minified αντικείμενο JSON.
