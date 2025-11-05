@@ -28,7 +28,6 @@ export interface BriefingContent {
   weather?: {
     description: string;
     temperature: string;
-    icon: string;
   };
   localTime?: string;
 }

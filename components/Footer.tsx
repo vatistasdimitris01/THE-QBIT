@@ -1,5 +1,6 @@
 
 import React from 'react';
+import NotificationManager from './NotificationManager';
 
 const Footer: React.FC = () => {
   return (
@@ -24,6 +25,7 @@ const Footer: React.FC = () => {
                     </svg>
                 </a>
             </div>
+            <NotificationManager />
         </div>
       </div>
     </footer>

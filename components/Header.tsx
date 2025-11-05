@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import NotificationBell from './NotificationBell';
 
 interface HeaderProps {
     country: string | null;
@@ -7,7 +6,6 @@ interface HeaderProps {
     weather?: {
         description: string;
         temperature: string;
-        icon: string;
     };
     localTime?: string;
 }
@@ -17,9 +15,8 @@ const WeatherDisplay: React.FC<{ weather: HeaderProps['weather'], localTime: Hea
         return <div className="text-xs text-stone-500 font-sans hidden sm:block h-5"></div>; // Placeholder for layout consistency
     }
     return (
-        <div className="hidden sm:flex items-center gap-2 text-sm text-stone-700" title={`${weather.description} στην τοποθεσία σας`}>
-            <span>{weather.icon}</span>
-            <span className="font-medium">{weather.temperature}</span>
+        <div className="hidden sm:flex items-center gap-3 text-sm text-stone-700" title={`Καιρός στην τοποθεσία σας: ${weather.description}`}>
+            <span className="font-medium">{weather.description}, {weather.temperature}</span>
             <span className="text-stone-300">|</span>
             <span className="font-medium">{localTime}</span>
         </div>
@@ -56,7 +53,6 @@ const Header: React.FC<HeaderProps> = ({ country, onCountryChange, weather, loca
 
 
                 <div className="flex items-center">
-                    <NotificationBell />
                     <div className="relative" ref={dropdownRef}>
                         <button
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
