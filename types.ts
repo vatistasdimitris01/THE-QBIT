@@ -10,6 +10,7 @@ export interface Story {
   category: string;
   title: string;
   summary: string;
+  importance: number;
   annotations?: Annotation[];
 }
 
@@ -22,9 +23,8 @@ export interface BriefingContent {
   greeting: string;
   intro: string;
   timestamp: string;
-  body: string; // A single string, potentially with markdown-like formatting
+  stories: Story[];
   outro: string;
-  annotations?: Annotation[];
   weather?: {
     description: string;
     temperature: string;

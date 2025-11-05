@@ -57,7 +57,7 @@ const App: React.FC = () => {
     try {
       const { briefing: fetchedBriefing } = await getDailyBriefing(new Date(), newCountry, location);
       
-      if (!fetchedBriefing.content.body) {
+      if (!fetchedBriefing.content.stories || fetchedBriefing.content.stories.length === 0) {
         setError("Δεν βρέθηκαν ειδήσεις για σήμερα. Παρακαλώ δοκιμάστε ξανά αργότερα.");
         setStatus('error');
       } else {

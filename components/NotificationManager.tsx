@@ -40,10 +40,10 @@ const NotificationManager: React.FC = () => {
       case 'granted':
         return (
           <div
-            className="text-sm text-stone-400 filter blur-sm select-none"
+            className="text-sm text-stone-400"
             title="Οι ειδοποιήσεις είναι ενεργές."
           >
-            Ειδοποιήσεις Ενεργοποιήθηκαν
+            Οι ειδοποιήσεις είναι ενεργές
           </div>
         );
       case 'denied':

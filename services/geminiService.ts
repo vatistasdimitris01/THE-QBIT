@@ -1,4 +1,4 @@
-import type { Briefing } from '../types';
+import type { Briefing, Story } from '../types';
 
 export async function getDailyBriefing(date: Date, country: string | null, location: { lat: number, lon: number } | null): Promise<{ briefing: Briefing, fromCache: boolean }> {
     const params = new URLSearchParams();
@@ -19,8 +19,21 @@ export async function getDailyBriefing(date: Date, country: string | null, locat
             throw new Error(errorData.error || `Request failed with status ${response.status}`);
         }
 
-        const briefing: Briefing = await response.json();
-        // The concept of 'fromCache' is no longer managed on the client, so we default to false.
+        // The API returns stories without an ID, so we add one here for client-side use.
+        const rawBriefing = await response.json();
+        const storiesWithIds: Story[] = rawBriefing.content.stories.map((story: Omit<Story, 'id'>, index: number) => ({
+            ...story,
+            id: `story-${index}`
+        }));
+
+        const briefing: Briefing = {
+            ...rawBriefing,
+            content: {
+                ...rawBriefing.content,
+                stories: storiesWithIds,
+            }
+        };
+
         return { briefing, fromCache: false };
 
     } catch (error) {

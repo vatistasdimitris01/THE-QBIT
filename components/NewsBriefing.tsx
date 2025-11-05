@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import type { Briefing } from '../types';
+import React, { useEffect, useState, useMemo } from 'react';
+import type { Briefing, Annotation as AnnotationType } from '../types';
 import ShareButton from './ShareButton';
-import Annotation from './Annotation';
 import SourceList from './SourceList';
+import StoryCard from './StoryCard';
 
 interface NewsBriefingProps {
   briefing: Briefing;
@@ -23,74 +23,95 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
         }
     }, [loadTime]);
 
-    const renderBody = (body: string, annotations?: Briefing['content']['annotations']) => {
-        return body.split('\n\n').map((paragraph, pIdx) => {
-            const trimmedParagraph = paragraph.trim();
+    const categoryOrder = ['Πολιτική', 'Οικονομία', 'Κόσμος', 'Κοινωνία', 'Αθλητισμός', 'Τεχνολογία', 'Lifestyle'];
 
-            if (trimmedParagraph.startsWith('### ')) {
-                return <h3 key={pIdx} className="text-2xl font-semibold font-serif text-stone-900 mt-8 mb-4">{trimmedParagraph.substring(4)}</h3>;
+    const sortedStories = useMemo(() => {
+        if (!content.stories) return [];
+        return [...content.stories].sort((a, b) => {
+            const indexA = categoryOrder.indexOf(a.category);
+            const indexB = categoryOrder.indexOf(b.category);
+
+            // Handle cases where a category might not be in our predefined list
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            
+            // Sort by category order first
+            if (indexA !== indexB) {
+                return indexA - indexB;
             }
 
-            if (!trimmedParagraph) {
-                return null;
-            }
-
-            if (!annotations || annotations.length === 0) {
-                return <p key={pIdx} className="mb-4 text-lg leading-relaxed text-stone-800">{trimmedParagraph}</p>;
-            }
-
-            let annotatedParagraph: (string | React.ReactElement)[] = [trimmedParagraph];
-
-            annotations.forEach((anno) => {
-                const newResult: (string | React.ReactElement)[] = [];
-                annotatedParagraph.forEach((part) => {
-                    if (typeof part === 'string' && part.includes(anno.term)) {
-                        const splitParts = part.split(anno.term);
-                        for (let i = 0; i < splitParts.length; i++) {
-                            newResult.push(splitParts[i]);
-                            if (i < splitParts.length - 1) {
-                                newResult.push(<Annotation key={`${pIdx}-${anno.term}-${i}`} term={anno.term} explanation={anno.explanation} importance={anno.importance} />);
-                            }
-                        }
-                    } else {
-                        newResult.push(part);
-                    }
-                });
-                annotatedParagraph = newResult;
-            });
-
-            return <p key={pIdx} className="mb-4 text-lg leading-relaxed text-stone-800">{annotatedParagraph}</p>;
+            // Then, sort by importance (descending) within the same category
+            return b.importance - a.importance;
         });
+    }, [content.stories]);
+
+    const allAnnotations = useMemo(() => 
+        content.stories?.flatMap(story => story.annotations || []) || [], 
+    [content.stories]);
+
+
+    const renderAnnotationsSidebar = (annotations: AnnotationType[]) => {
+        if (!annotations || annotations.length === 0) return null;
+
+        const sortedAnnotations = [...annotations].sort((a, b) => {
+            if (b.importance !== a.importance) return b.importance - a.importance;
+            return a.term.localeCompare(b.term);
+        });
+
+        return (
+            <div>
+                <h3 className="text-lg font-semibold font-serif text-stone-800 mb-4">Βασικοί Όροι</h3>
+                <div className="flex flex-wrap gap-2">
+                    {sortedAnnotations.map((anno, i) => (
+                        <span key={`${anno.term}-${i}`} className={`text-sm px-2 py-1 rounded-md ${
+                            anno.importance === 3 ? 'bg-orange-200 text-orange-900 font-medium ring-1 ring-inset ring-orange-300' :
+                            anno.importance === 2 ? 'bg-orange-100 text-orange-800' :
+                            'bg-stone-200 text-stone-700'
+                        }`} title={anno.explanation}>
+                            {anno.term}
+                        </span>
+                    ))}
+                </div>
+            </div>
+        );
     };
     
     return (
-        <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12">
-                <p className="text-xl text-stone-600">{content.greeting}</p>
-                <h1 className="text-3xl md:text-4xl font-serif my-2 text-stone-900">{content.intro}</h1>
-                <p className="text-sm text-stone-500">{content.timestamp}</p>
-            </div>
-
-            <article className="prose prose-stone lg:prose-lg max-w-none">
-                {renderBody(content.body, content.annotations)}
-            </article>
-
-            <p className="text-center text-lg text-stone-700 mt-12 mb-16">{content.outro}</p>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
             
-            <div className="text-center relative">
-                <ShareButton />
-                {showLoadTime && loadTime && (
-                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full whitespace-nowrap">
-                        Φορτώθηκε σε {loadTime}ms
-                    </div>
-                )}
+            {/* Main Content Column */}
+            <div className="lg:col-span-2">
+                <header className="text-center mb-12">
+                    <p className="text-xl text-stone-600">{content.greeting}</p>
+                    <h1 className="text-3xl md:text-4xl font-serif my-2 text-stone-900">{content.intro}</h1>
+                    <p className="text-sm text-stone-500">{content.timestamp}</p>
+                </header>
+
+                <main className="space-y-12">
+                    {sortedStories.map((story) => (
+                        <StoryCard key={story.id} story={story} />
+                    ))}
+                </main>
+
+                <p className="text-center text-lg text-stone-700 mt-12 mb-16">{content.outro}</p>
+                
+                <div className="flex justify-center relative">
+                    <ShareButton />
+                    {showLoadTime && loadTime && (
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full whitespace-nowrap">
+                            Φορτώθηκε σε {loadTime}ms
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {sources && sources.length > 0 && (
-                <div className="mt-24 pt-8 border-t border-stone-200">
-                    <SourceList sources={sources} />
-                </div>
-            )}
+            {/* Sidebar Column */}
+            <aside className="lg:col-span-1 lg:sticky lg:top-24 h-fit space-y-10">
+                {renderAnnotationsSidebar(allAnnotations)}
+                {sources && sources.length > 0 && (
+                     <SourceList sources={sources} />
+                )}
+            </aside>
         </div>
     );
 };
