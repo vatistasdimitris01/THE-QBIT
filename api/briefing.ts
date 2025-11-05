@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI, FunctionDeclaration, Type, FunctionResponsePart } from "@google/genai";
+import { GoogleGenAI, FunctionDeclaration, Type, Part } from "@google/genai";
 
 // Define interfaces locally to avoid module resolution issues in serverless env
 interface StorySource {
@@ -107,7 +107,7 @@ const getBriefingPrompt = (date: Date, country?: string | null): string => {
     `;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VerrcelRequest, res: VercelResponse) {
     if (!GEMINI_API_KEY || !CSE_API_KEY || !CSE_ID) {
         return res.status(500).json({ error: "Server-side API keys are not configured." });
     }
@@ -139,30 +139,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
 
         const prompt = getBriefingPrompt(date, country);
-        // FIX: The `sendMessage` method expects a `SendMessageParameters` object, which requires the prompt to be wrapped.
+        // FIX: Argument of type 'string' is not assignable to parameter of type 'SendMessageParameters'. The `sendMessage` method expects an object with a `message` property.
         let result = await chat.sendMessage({ message: prompt });
         
         while (true) {
             const functionCalls = result.functionCalls;
             if (!functionCalls || functionCalls.length === 0) { break; }
             
-            const functionResponseParts: FunctionResponsePart[] = [];
+            const functionResponseParts: Part[] = [];
             for (const call of functionCalls) {
                 if (call.name === 'searchWeb') {
                     const query = call.args?.query;
                     if (typeof query === 'string') {
                         const { searchResultsString, sources } = await searchWeb(query);
                         allSources.push(...sources);
-                        // FIX: Based on the error, the `FunctionResponsePart` in this SDK version is not a wrapped object.
                         functionResponseParts.push({
-                            name: 'searchWeb',
-                            response: { content: searchResultsString },
+                            functionResponse: {
+                                name: 'searchWeb',
+                                response: { content: searchResultsString },
+                            }
                         });
                     }
                 }
             }
             
-            // FIX: The `sendMessage` method expects a `SendMessageParameters` object, which requires the function response parts to be wrapped.
+            // FIX: Argument of type 'Part[]' is not assignable to parameter of type 'SendMessageParameters'. The `sendMessage` method expects an object with a `message` property.
             result = await chat.sendMessage({ message: functionResponseParts });
         }
 
