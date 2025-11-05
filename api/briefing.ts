@@ -139,6 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
 
         const prompt = getBriefingPrompt(date, country);
+        // FIX: The `sendMessage` method expects a `SendMessageParameters` object, which requires the prompt to be wrapped.
         let result = await chat.sendMessage({ message: prompt });
         
         while (true) {
@@ -152,20 +153,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     if (typeof query === 'string') {
                         const { searchResultsString, sources } = await searchWeb(query);
                         allSources.push(...sources);
-// FIX: The object being pushed to functionResponseParts has the correct structure for a FunctionResponsePart. The original error on this line was likely a misleading side-effect of the incorrect `chat.sendMessage` call that followed. Correcting the `sendMessage` call resolves this issue.
+                        // FIX: Based on the error, the `FunctionResponsePart` in this SDK version is not a wrapped object.
                         functionResponseParts.push({
-                            functionResponse: {
-                                name: 'searchWeb',
-                                response: { content: searchResultsString },
-                            },
+                            name: 'searchWeb',
+                            response: { content: searchResultsString },
                         });
                     }
                 }
             }
             
-            // FIX: The sendMessage method for ai.chats.create expects a `SendMessageParameters` object,
-            // which requires the content to be passed via a `message` property. The array of function
-            // response parts is now correctly wrapped in an object.
+            // FIX: The `sendMessage` method expects a `SendMessageParameters` object, which requires the function response parts to be wrapped.
             result = await chat.sendMessage({ message: functionResponseParts });
         }
 

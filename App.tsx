@@ -46,21 +46,31 @@ const App: React.FC = () => {
   }, []);
   
   useEffect(() => {
-    // Register service worker for push notifications
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      // Construct the full URL to the service worker to avoid cross-origin issues in specific environments.
-      const swUrl = `${window.location.origin}/service-worker.js`;
-      navigator.serviceWorker.register(swUrl)
-        .then(swReg => {
-          console.log('Service Worker is registered', swReg);
-        })
-        .catch(error => {
-          console.error('Service Worker Error', error);
-        });
-    }
+    // Wrap Service Worker registration in a 'load' event listener
+    // to prevent "The document is in an invalid state" error.
+    const registerServiceWorker = () => {
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        // Construct the full URL to the service worker to avoid cross-origin issues in specific environments.
+        const swUrl = `${window.location.origin}/service-worker.js`;
+        navigator.serviceWorker.register(swUrl)
+          .then(swReg => {
+            console.log('Service Worker is registered', swReg);
+          })
+          .catch(error => {
+            console.error('Service Worker Error', error);
+          });
+      }
+    };
+    
+    window.addEventListener('load', registerServiceWorker);
     
     // Initial load
     loadNews(currentDate, country);
+
+    // Cleanup listener on component unmount
+    return () => {
+        window.removeEventListener('load', registerServiceWorker);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
