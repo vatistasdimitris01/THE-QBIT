@@ -44,58 +44,26 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
             return b.importance - a.importance;
         });
     }, [content.stories]);
-
-    const allAnnotations = useMemo(() => 
-        content.stories?.flatMap(story => story.annotations || []) || [], 
-    [content.stories]);
-
-
-    const renderAnnotationsSidebar = (annotations: AnnotationType[]) => {
-        if (!annotations || annotations.length === 0) return null;
-
-        const sortedAnnotations = [...annotations].sort((a, b) => {
-            if (b.importance !== a.importance) return b.importance - a.importance;
-            return a.term.localeCompare(b.term);
-        });
-
-        return (
-            <div>
-                <h3 className="text-lg font-semibold font-serif text-stone-800 mb-4">Βασικοί Όροι</h3>
-                <div className="flex flex-wrap gap-2">
-                    {sortedAnnotations.map((anno, i) => (
-                        <span key={`${anno.term}-${i}`} className={`text-sm px-2 py-1 rounded-md ${
-                            anno.importance === 3 ? 'bg-orange-200 text-orange-900 font-medium ring-1 ring-inset ring-orange-300' :
-                            anno.importance === 2 ? 'bg-orange-100 text-orange-800' :
-                            'bg-stone-200 text-stone-700'
-                        }`} title={anno.explanation}>
-                            {anno.term}
-                        </span>
-                    ))}
-                </div>
-            </div>
-        );
-    };
     
     return (
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+        <div className="max-w-3xl mx-auto">
             
-            {/* Main Content Column */}
-            <div className="lg:col-span-2">
-                <header className="text-center mb-12">
-                    <p className="text-xl text-stone-600">{content.greeting}</p>
-                    <h1 className="text-3xl md:text-4xl font-serif my-2 text-stone-900">{content.intro}</h1>
-                    <p className="text-sm text-stone-500">{content.timestamp}</p>
-                </header>
+            <header className="text-center mb-12">
+                <p className="text-xl text-stone-600">{content.greeting}</p>
+                <h1 className="text-3xl md:text-4xl font-serif my-2 text-stone-900">{content.intro}</h1>
+                <p className="text-sm text-stone-500">{content.timestamp}</p>
+            </header>
 
-                <main className="space-y-12">
-                    {sortedStories.map((story) => (
-                        <StoryCard key={story.id} story={story} />
-                    ))}
-                </main>
+            <main className="space-y-12">
+                {sortedStories.map((story) => (
+                    <StoryCard key={story.id} story={story} />
+                ))}
+            </main>
 
-                <p className="text-center text-lg text-stone-700 mt-12 mb-16">{content.outro}</p>
+            <footer className="mt-16 pt-8 border-t border-stone-200">
+                <p className="text-center text-lg text-stone-700 mb-8">{content.outro}</p>
                 
-                <div className="flex justify-center relative">
+                <div className="flex justify-center relative mb-12">
                     <ShareButton />
                     {showLoadTime && loadTime && (
                         <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full whitespace-nowrap">
@@ -103,15 +71,11 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
                         </div>
                     )}
                 </div>
-            </div>
-
-            {/* Sidebar Column */}
-            <aside className="lg:col-span-1 lg:sticky lg:top-24 h-fit space-y-10">
-                {renderAnnotationsSidebar(allAnnotations)}
+                
                 {sources && sources.length > 0 && (
                      <SourceList sources={sources} />
                 )}
-            </aside>
+            </footer>
         </div>
     );
 };

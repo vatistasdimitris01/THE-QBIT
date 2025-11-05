@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { StorySource } from '../types';
 
 interface SourceListProps {
@@ -6,6 +6,7 @@ interface SourceListProps {
 }
 
 const SourceList: React.FC<SourceListProps> = ({ sources }) => {
+    const [isOpen, setIsOpen] = useState(false);
 
     const getDomain = (uri: string): string | null => {
         try {
@@ -15,10 +16,58 @@ const SourceList: React.FC<SourceListProps> = ({ sources }) => {
         }
     };
 
+    if (!sources || sources.length === 0) {
+        return null;
+    }
+
+    if (!isOpen) {
+        return (
+            <div className="text-center">
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className="inline-flex flex-col items-center gap-3 text-stone-600 hover:text-stone-900 transition-colors group"
+                    aria-label={`Εμφάνιση ${sources.length} πηγών`}
+                >
+                    <div className="flex items-center justify-center">
+                        {sources.slice(0, 5).map((source, index) => {
+                            const domain = getDomain(source.uri);
+                            if (!domain) return null;
+                            const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+                            return (
+                                <img
+                                    key={`${source.uri}-${index}`}
+                                    src={faviconUrl}
+                                    alt={`Favicon for ${domain}`}
+                                    className="w-8 h-8 rounded-full bg-white border-2 border-stone-50 shadow-md object-contain group-hover:border-stone-200 transition-all"
+                                    style={{ marginLeft: index > 0 ? '-12px' : 0, zIndex: 5 - index }}
+                                    width="32"
+                                    height="32"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                    }}
+                                />
+                            );
+                        })}
+                    </div>
+                    <span className="text-sm font-medium tracking-wide underline decoration-stone-300 group-hover:decoration-stone-400 underline-offset-2">
+                        Προβολή {sources.length} πηγών
+                    </span>
+                </button>
+            </div>
+        );
+    }
+
     return (
-        <div>
-             <div className="mb-4">
+        <div className="border border-stone-200 rounded-lg p-4">
+             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold font-serif text-stone-800">Πηγές Ειδήσεων</h3>
+                <button 
+                    onClick={() => setIsOpen(false)}
+                    className="text-sm font-medium text-stone-500 hover:text-stone-800"
+                    aria-label="Απόκρυψη πηγών"
+                >
+                    Απόκρυψη
+                </button>
             </div>
             <ul className="space-y-2">
                 {sources.map((source, index) => {

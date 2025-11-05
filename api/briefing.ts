@@ -44,10 +44,22 @@ const GEMINI_API_KEY = process.env.API_KEY;
 const CSE_API_KEY = process.env.CSE_API_KEY;
 const CSE_ID = process.env.CSE_ID;
 
+const GREEK_SITES = [
+    'kathimerini.gr', 'protothema.gr', 'in.gr', 'tovima.gr', 'tanea.gr',
+    'newsbomb.gr', 'news247.gr', 'skai.gr', 'ant1news.gr', 'ertnews.gr',
+    'open.tv', 'megatv.com', 'capital.gr', 'naftemporiki.gr', 'bdaily.gr',
+    'euro2day.gr', 'ot.gr', 'sport24.gr', 'gazzetta.gr', 'sdna.gr',
+    'onsports.gr', 'sport-fm.gr', 'filathlos.gr', 'techblog.gr', 'digitallife.gr',
+    'enternity.gr', 'insomnia.gr', 'techmaniacs.gr', 'thebest.gr', 'creta24.gr',
+    'thesstoday.gr', 'larissanet.gr', 'patrisnews.com'
+];
+
+
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-async function searchWeb(query: string): Promise<{ searchResults: any[], sources: StorySource[] }> {
-    const url = `https://www.googleapis.com/customsearch/v1?key=${CSE_API_KEY}&cx=${CSE_ID}&q=${encodeURIComponent(query)}`;
+async function searchWeb(query: string, siteRestriction: string): Promise<{ searchResults: any[], sources: StorySource[] }> {
+    const finalQuery = siteRestriction ? `${query} (${siteRestriction})` : query;
+    const url = `https://www.googleapis.com/customsearch/v1?key=${CSE_API_KEY}&cx=${CSE_ID}&q=${encodeURIComponent(finalQuery)}`;
     
     try {
         const response = await fetch(url);
@@ -104,16 +116,29 @@ const getBriefingPrompt = (date: Date, country?: string | null, lat?: string, lo
     let locationInstructions = '';
     if (lat && lon) {
         locationInstructions = `
-        **Οδηγίες Τοποθεσίας**: Ο χρήστης βρίσκεται στο latitude ${lat} και longitude ${lon}. Χρησιμοποίησε αυτή την πληροφορία για να συμπληρώσεις τα πεδία 'weather' και 'localTime'.
-        `;
+        **Οδηγίες Τοποθεσίας**: Ο χρήστης βρίσκεται στο latitude ${lat} και longitude ${lon}. Χρησιμοποίησε αυτή την πληροφορία για να συμπληρώσεις τα πεδία 'weather' και 'localTime'.`;
+    }
+
+    let sourceInstructions = '';
+    if (country === 'Ελλάδα') {
+        sourceInstructions = `**Σημαντική Οδηγία Πηγών**: Η αναζήτηση ειδήσεων περιορίζεται σε μια προεπιλεγμένη λίστα αξιόπιστων ελληνικών ειδησεογραφικών ιστοσελίδων. Βάσισε την απάντησή σου αποκλειστικά σε αυτές τις πηγές.`
     }
 
     return `
     Λειτούργησε ως παγκόσμιας κλάσης αρχισυντάκτης για ένα μινιμαλιστικό, ειδησεογραφικό brief με επίκεντρο το κείμενο, που ονομάζεται THE QBIT.
-    Ο στόχος σου είναι να εντοπίσεις τις 7-10 πιο σημαντικές και επιδραστικές ${country ? `ειδήσεις από την ${country}` : 'παγκόσμιες ειδήσεις'} για την ακριβή ημερομηνία: ${formattedDate}.
+    Ο στόχος σου είναι να εντοπίσεις τις πιο σημαντικές και επιδραστικές ${country ? `ειδήσεις από την ${country}` : 'παγκόσμιες ειδήσεις'} για την ακριβή ημερομηνία: ${formattedDate}.
     
-    **Σημαντικό**: Πρέπει **οπωσδήποτε** να χρησιμοποιήσεις το εργαλείο 'searchWeb' για να βρεις σχετικά ειδησεογραφικά άρθρα. Διατύπωσε ένα κατάλληλο ερώτημα αναζήτησης (query) για να βρεις τις κορυφαίες ειδήσεις της ημέρας (π.χ., "κορυφαίες ειδήσεις ${country || 'κόσμος'} ${formattedDate}"). Βάσισε ολόκληρη την απάντησή σου **αποκλειστικά** στα αποτελέσματα της αναζήτησης. Μην κάνεις εικασίες ή προβλέψεις για μελλοντικές ημερομηνίες. Αν η ημερομηνία είναι στο μέλλον, αναζήτησε προγραμματισμένα γεγονότα ή ανακοινώσεις για εκείνη την ημέρα.
+    **Βασικές Οδηγίες**: Πρέπει **οπωσδήποτε** να χρησιμοποιήσεις το εργαλείο 'searchWeb' για να βρεις σχετικά ειδησεογραφικά άρθρα. Διατύπωσε ένα κατάλληλο ερώτημα αναζήτησης (query) για να βρεις τις κορυφαίες ειδήσεις της ημέρας (π.χ., "κορυφαίες ειδήσεις ${country || 'κόσμος'} ${formattedDate}"). Βάσισε ολόκληρη την απάντησή σου **αποκλειστικά** στα αποτελέσματα της αναζήτησης. Μην κάνεις εικασίες ή προβλέψεις για μελλοντικές ημερομηνίες. Αν η ημερομηνία είναι στο μέλλον, αναζήτησε προγραμματισμένα γεγονότα ή ανακοινώσεις για εκείνη την ημέρα.
     ${locationInstructions}
+    ${sourceInstructions}
+
+    **Οδηγίες Σύνοψης**: Για κάθε είδηση, εφάρμοσε μια συνδυαστική προσέγγιση σύνοψης:
+    1.  **Εξαγωγική (Extractive)**: Πρώτα, εντόπισε τις 2-4 πιο κρίσιμες φράσεις ή όρους-κλειδιά στο αρχικό άρθρο. Αυτοί οι όροι θα αποτελέσουν τη βάση για τις 'annotations'.
+    2.  **Αφηρημένη (Abstractive)**: Στη συνέχεια, γράψε μια νέα, ρευστή και συνεκτική περίληψη στα ελληνικά, ενσωματώνοντας φυσικά τις πληροφορίες από τις φράσεις που εντόπισες. Η περίληψη πρέπει να είναι γραμμένη με δικά σου λόγια και όχι απλή αντιγραφή.
+
+    **Οδηγίες Κατηγοριοποίησης και Περιορισμού**:
+    Κατηγοριοποίησε κάθε είδηση στην πιο κατάλληλη κατηγορία από τη λίστα: ${categories}. Δώσε τις 1-2 κορυφαίες ειδήσεις ανά σχετική κατηγορία για να διασφαλίσεις μια ισορροπημένη κάλυψη, με συνολικά 7-10 ειδήσεις.
+
     Αφού λάβεις τα αποτελέσματα της αναζήτησης, δημιούργησε μια συλλογή από τις κορυφαίες ειδήσεις.
     Η τελική σου απάντηση πρέπει να είναι ένα αντικείμενο JSON με τα εξής κλειδιά: 'greeting', 'intro', 'timestamp', 'stories', 'outro' ${lat && lon ? ", 'weather', 'localTime'" : ""}.
 
@@ -171,6 +196,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const prompt = getBriefingPrompt(date, country, lat as string, lon as string);
         let result = await chat.sendMessage({ message: prompt });
         
+        const siteRestriction = country === 'Ελλάδα' ? GREEK_SITES.map(site => `site:${site}`).join(' OR ') : '';
+
         while (true) {
             const functionCalls = result.functionCalls;
             if (!functionCalls || functionCalls.length === 0) { break; }
@@ -180,7 +207,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 if (call.name === 'searchWeb') {
                     const query = call.args?.query;
                     if (typeof query === 'string') {
-                        const { searchResults, sources } = await searchWeb(query);
+                        const { searchResults, sources } = await searchWeb(query, siteRestriction);
                         allSources.push(...sources);
                         functionResponseParts.push({
                             functionResponse: {
