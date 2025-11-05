@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI, FunctionDeclaration, Type, Part } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 // Define interfaces locally to avoid module resolution issues in serverless env
 interface StorySource {
@@ -30,65 +30,12 @@ interface Briefing {
 }
 
 // Check for environment variables
-if (!process.env.API_KEY || !process.env.CSE_API_KEY || !process.env.CSE_ID) {
-    console.error("Missing required environment variables for API communication.");
+if (!process.env.API_KEY) {
+    console.error("Missing required environment variable for API communication: API_KEY");
 }
 
 const GEMINI_API_KEY = process.env.API_KEY;
-const CSE_API_KEY = process.env.CSE_API_KEY;
-const CSE_ID = process.env.CSE_ID;
-
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
-async function searchWeb(query: string): Promise<{ searchResults: any[], sources: StorySource[] }> {
-    const url = `https://www.googleapis.com/customsearch/v1?key=${CSE_API_KEY}&cx=${CSE_ID}&q=${encodeURIComponent(query)}`;
-    
-    try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            const errorBody = await response.text();
-            console.error("Google Search API Error:", errorBody);
-            throw new Error(`Google Search API request failed with status ${response.status}`);
-        }
-        const data = await response.json();
-        
-        if (!data.items || data.items.length === 0) {
-            return { searchResults: [], sources: [] };
-        }
-
-        const sources: StorySource[] = data.items.map((item: any) => ({
-            title: item.title,
-            uri: item.link,
-        }));
-
-        const searchResults = data.items.map((item: any) => ({
-            title: item.title,
-            link: item.link,
-            snippet: item.snippet
-        }));
-
-        return { searchResults, sources };
-
-    } catch (error) {
-        console.error("Error calling Google Custom Search API:", error);
-        return { searchResults: [], sources: [] };
-    }
-}
-
-const searchTool: FunctionDeclaration = {
-    name: 'searchWeb',
-    description: 'Searches the web for recent news articles based on a query.',
-    parameters: {
-        type: Type.OBJECT,
-        properties: {
-            query: {
-                type: Type.STRING,
-                description: 'The search query to find news articles.'
-            },
-        },
-        required: ['query']
-    },
-};
 
 const getBriefingPrompt = (date: Date, country?: string | null, lat?: string, lon?: string): string => {
     const formattedDate = new Intl.DateTimeFormat('fr-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date); // YYYY-MM-DD
@@ -97,35 +44,35 @@ const getBriefingPrompt = (date: Date, country?: string | null, lat?: string, lo
     let locationInstructions = '';
     if (lat && lon) {
         locationInstructions = `
-        **Οδηγίες Τοποθεσίας**: Ο χρήστης βρίσκεται στο latitude ${lat} και longitude ${lon}. Χρησιμοποίησε αυτή την πληροφορία για να συμπληρώσεις τα πεδία 'weather' και 'localTime'.
+        **Location Context**: The user is at latitude ${lat} and longitude ${lon}. Use this information to populate the 'weather' and 'localTime' fields.
         `;
     }
 
     return `
-    Λειτούργησε ως παγκόσμιας κλάσης αρχισυντάκτης για ένα μινιμαλιστικό, ειδησεογραφικό brief με επίκεντρο το κείμενο, που ονομάζεται THE QBIT.
-    Ο στόχος σου είναι να εντοπίσεις τις 7-10 πιο σημαντικές και επιδραστικές ${country ? `ειδήσεις από την ${country}` : 'παγκόσμιες ειδήσεις'} για τη συγκεκριμένη ημερομηνία: ${formattedDate}.
+    You are a world-class editor-in-chief for a minimalist, text-centric news brief called THE QBIT.
+    Your goal is to identify the 7-10 most important and impactful ${country ? `news stories from ${country}` : 'global news stories'} for the given date: ${formattedDate}.
     
-    **Σημαντικό**: Πρέπει **οπωσδήποτε** να χρησιμοποιήσεις το εργαλείο 'searchWeb' για να βρεις σχετικά ειδησεογραφικά άρθρα. Διατύπωσε ένα κατάλληλο ερώτημα αναζήτησης (query) για να βρεις τις κορυφαίες ειδήσεις.
+    **Crucial**: You MUST use your built-in search tools to find relevant, recent news articles.
     ${locationInstructions}
-    Αφού λάβεις τα αποτελέσματα της αναζήτησης, δημιούργησε ένα ενιαίο, συνεκτικό άρθρο.
-    Η τελική σου απάντηση πρέπει να είναι ένα αντικείμενο JSON με τα εξής κλειδιά: 'greeting', 'intro', 'timestamp', 'body', 'outro', 'annotations' ${lat && lon ? ", 'weather', 'localTime'" : ""}.
+    After getting search results, create a single, cohesive article.
+    Your final response MUST be a JSON object with the following keys: 'greeting', 'intro', 'timestamp', 'body', 'outro', 'annotations' ${lat && lon ? ", 'weather', 'localTime'" : ""}.
 
-    1.  'greeting': Ένας φιλικός, δημιουργικός και κατάλληλος για την ώρα της ημέρας χαιρετισμός (η τρέχουσα ώρα Αθήνας είναι ${localTime}).
-    2.  'intro': Μια σύντομη εισαγωγική πρόταση, π.χ., "Το μόνο που χρειάζεσαι να διαβάσεις σήμερα.".
-    3.  'timestamp': Μια συμβολοσειρά με την πλήρη ημερομηνία και την τρέχουσα ώρα Αθήνας. Παράδειγμα: "Τρίτη, 16 Ιουλίου 2024, ${localTime}".
-    4.  'body': Το κυρίως σώμα του άρθρου. Ενσωμάτωσε τις 7-10 ειδήσεις σε ένα ενιαίο κείμενο. Για κάθε είδηση, δημιούργησε μια ενότητα με έναν τίτλο σε μορφή markdown (π.χ., "### Ο τίτλος της είδησης εδώ"). Το κείμενο πρέπει να είναι ουδέτερο, διεισδυτικό και να ρέει φυσικά από τη μια είδηση στην άλλη. Χρησιμοποίησε '\\n\\n' για να διαχωρίσεις τις παραγράφους.
-    5.  'outro': Μια σύντομη, έξυπνη ή στοχαστική πρόταση κλεισίματος. Μπορείς εναλλακτικά να χρησιμοποιήσεις ένα σχετικό απόφθεγμα από μια διάσημη προσωπικότητα. Νιώσε ελεύθερος να πρωτοτυπήσεις και να αποφύγεις τις επαναλαμβανόμενες φράσεις.
-    6.  'annotations': Ένας πίνακας (array) με 15-25 αντικείμενα. Για κάθε αντικείμενο, πρέπει να προσδιορίσεις βασικούς όρους, φράσεις, ονόματα ή έννοιες από το κείμενο του 'body'. Κάθε αντικείμενο πρέπει να έχει ένα 'term' (το ακριβές κείμενο από το body) και ένα 'importance' (έναν αριθμό από 1 έως 3, όπου το 3 είναι το πιο σημαντικό). Για τους 3-5 πιο σύνθετους όρους, πρέπει επίσης να παρέχεις μια σύντομη 'explanation'. Για όλους τους άλλους όρους, η ιδιότητα 'explanation' πρέπει να παραλειφθεί.
-    7.  'weather' (αν υπάρχει τοποθεσία): Ένα αντικείμενο με δύο κλειδιά: 'description' (μια σύντομη περιγραφή του καιρού, π.χ., "Αίθριος") και 'temperature' (η θερμοκρασία σε μορφή string, π.χ., "25°C").
-    8.  'localTime' (αν υπάρχει τοποθεσία): Μια συμβολοσειρά (string) με την τρέχουσα τοπική ώρα του χρήστη σε μορφή HH:MM.
+    1.  'greeting': A friendly, creative, time-of-day appropriate greeting (current Athens time is ${localTime}).
+    2.  'intro': A short introductory sentence, e.g., "All you need to read today.".
+    3.  'timestamp': A string with the full date and current Athens time. Example: "Tuesday, July 16, 2024, ${localTime}".
+    4.  'body': The main article body. Weave the 7-10 news stories into a single narrative. For each story, create a section with a markdown headline (e.g., "### Headline here"). The text should be neutral, insightful, and flow naturally. Use '\\n\\n' to separate paragraphs.
+    5.  'outro': A short, witty, or thoughtful closing sentence. Feel free to be original and avoid repetitive phrases.
+    6.  'annotations': An array of 15-25 objects. For each, identify key terms, phrases, names, or concepts from the 'body' text. Each object must have a 'term' (the exact text from the body) and an 'importance' (a number from 1 to 3, with 3 being most important). For the 3-5 most complex terms, also provide a short 'explanation'. For all other terms, the 'explanation' property must be omitted.
+    7.  'weather' (if location provided): An object with two keys: 'description' (a short weather description, e.g., "Clear") and 'temperature' (the temperature as a string, e.g., "25°C").
+    8.  'localTime' (if location provided): A string with the user's current local time in HH:MM format.
 
-    Η τελική έξοδος πρέπει να είναι ένα ενιαίο, minified αντικείμενο JSON. Μην συμπεριλάβεις τίποτα άλλο στην τελική σου απάντηση.
+    The final output must be a single, minified JSON object. Do not wrap it in markdown backticks.
     `;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    if (!GEMINI_API_KEY || !CSE_API_KEY || !CSE_ID) {
-        return res.status(500).json({ error: "Server-side API keys are not configured." });
+    if (!GEMINI_API_KEY) {
+        return res.status(500).json({ error: "Server-side API key is not configured." });
     }
 
     if (req.method !== 'GET') {
@@ -143,10 +90,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const country = typeof countryString === 'string' ? countryString : null;
     
     let rawResponseText: string | undefined = "";
-    const allSources: StorySource[] = [];
 
     try {
-        const tools: any[] = [{ functionDeclarations: [searchTool] }];
+        const tools: any[] = [{ googleSearch: {} }];
         const config: any = {
             temperature: 0.5,
             tools: tools,
@@ -164,56 +110,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             };
         }
 
-        const chat = ai.chats.create({
+        const prompt = getBriefingPrompt(date, country, lat as string, lon as string);
+        
+        const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
+            contents: prompt,
             config: config,
         });
 
-        const prompt = getBriefingPrompt(date, country, lat as string, lon as string);
-        let result = await chat.sendMessage({ message: prompt });
-        
-        while (true) {
-            const functionCalls = result.functionCalls;
-            if (!functionCalls || functionCalls.length === 0) { break; }
-            
-            const functionResponseParts: Part[] = [];
-            for (const call of functionCalls) {
-                if (call.name === 'searchWeb') {
-                    const query = call.args?.query;
-                    if (typeof query === 'string') {
-                        const { searchResults, sources } = await searchWeb(query);
-                        allSources.push(...sources);
-                        functionResponseParts.push({
-                            functionResponse: {
-                                name: 'searchWeb',
-                                response: { results: searchResults },
-                            }
-                        });
-                    }
-                }
-            }
-            
-            result = await chat.sendMessage({ message: functionResponseParts });
-        }
-
-        rawResponseText = result.text;
+        rawResponseText = response.text;
         
         if (!rawResponseText) {
-            console.error("AI response was empty or blocked. Full response:", JSON.stringify(result, null, 2));
+            console.error("AI response was empty or blocked. Full response:", JSON.stringify(response, null, 2));
             return res.status(500).json({ error: "Η AI δεν παρείχε απάντηση. Η απάντηση μπορεί να αποκλείστηκε λόγω πολιτικών ασφαλείας." });
         }
 
         let jsonText = rawResponseText.trim().replace(/^```json|```$/g, '');
         const parsedJson = JSON.parse(jsonText);
+        
+        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+        const sources: StorySource[] = groundingChunks
+            .filter((chunk: any) => chunk.web && chunk.web.uri)
+            .map((chunk: any) => ({
+                title: chunk.web.title || new URL(chunk.web.uri).hostname,
+                uri: chunk.web.uri,
+            }));
 
         const finalBriefing: Briefing = {
             content: parsedJson,
-            sources: allSources,
+            sources: sources,
         };
         
         // Deduplicate sources
         const uniqueSources = Array.from(new Map<string, StorySource>(
-            finalBriefing.sources.filter(s => s.uri).map(source => [source.uri, source])
+            finalBriefing.sources.map(source => [source.uri, source])
         ).values());
         finalBriefing.sources = uniqueSources;
 
