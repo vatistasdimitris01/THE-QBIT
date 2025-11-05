@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import type { Briefing, Annotation as AnnotationType } from '../types';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import type { Briefing } from '../types';
 import ShareButton from './ShareButton';
 import SourceList from './SourceList';
 import StoryCard from './StoryCard';
@@ -13,8 +13,9 @@ interface NewsBriefingProps {
 const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
     const { content, sources } = briefing;
     const [showLoadTime, setShowLoadTime] = useState(false);
-    const [storiesLeft, setStoriesLeft] = useState(0);
+    const [storiesLeft, setStoriesLeft] = useState(() => briefing.content.stories.length);
     const [showIndicator, setShowIndicator] = useState(false);
+    const [indicatorDismissed, setIndicatorDismissed] = useState(false);
     const storyRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     useEffect(() => {
@@ -27,7 +28,18 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
         }
     }, [loadTime]);
 
+    // Reset indicator state when a new briefing is loaded
+    useEffect(() => {
+        setIndicatorDismissed(false);
+        setStoriesLeft(briefing.content.stories.length);
+    }, [briefing]);
+
     const handleScroll = useCallback(() => {
+        if (indicatorDismissed) {
+            if (showIndicator) setShowIndicator(false); // Ensure it's hidden if dismissed
+            return;
+        }
+
         const storiesTotal = briefing.content.stories.length;
         if (storiesTotal === 0) return;
 
@@ -39,6 +51,7 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
             // All stories are above the checkpoint, so we're at the end
             setStoriesLeft(0);
             setShowIndicator(false);
+            setIndicatorDismissed(true); // Dismiss it permanently for this session
             return;
         }
 
@@ -46,7 +59,7 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
         setStoriesLeft(numStoriesLeft);
         setShowIndicator(numStoriesLeft > 0 && numStoriesLeft <= 4);
         
-    }, [briefing.content.stories.length]);
+    }, [briefing.content.stories.length, indicatorDismissed, showIndicator]);
 
     useEffect(() => {
         handleScroll(); // Check position on initial render
@@ -65,11 +78,6 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
 
             <main className="space-y-12">
                 {content.stories.map((story, index) => (
-                    // Fix: The ref callback function should not return a value. The original
-                    // arrow function `el => storyRefs.current[index] = el` implicitly returned
-                    // the assigned element `el`, causing a type error. By adding curly braces,
-                    // the arrow function body becomes a statement block with an implicit `undefined`
-                    // return, which satisfies the `(instance: HTMLDivElement | null) => void` type.
                     <div key={story.id} ref={el => { storyRefs.current[index] = el; }}>
                         <StoryCard story={story} />
                     </div>
