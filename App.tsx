@@ -34,6 +34,18 @@ const App: React.FC = () => {
       } else {
         setBriefing(fetchedBriefing);
         setStatus('success');
+        
+        // If the user is not looking at the page, send a notification that the news is ready.
+        if (document.visibilityState === 'hidden' && Notification.permission === 'granted') {
+            navigator.serviceWorker.ready.then(registration => {
+                const options = {
+                    body: 'Η καθημερινή σας σύνοψη ειδήσεων είναι έτοιμη. Κάντε κλικ για να τη δείτε.',
+                    icon: '/favicon.svg',
+                    tag: 'news-ready' // Use a tag to prevent duplicate notifications
+                };
+                registration.showNotification('Η ενημέρωσή σας είναι εδώ!', options);
+            });
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Προέκυψε ένα άγνωστο σφάλμα.");
@@ -45,12 +57,24 @@ const App: React.FC = () => {
   }, []);
   
   useEffect(() => {
-    const registerServiceWorker = () => {
+    const setupServiceWorkerAndNotifications = () => {
       if ('serviceWorker' in navigator && 'PushManager' in window) {
-        const swUrl = `${window.location.origin}/service-worker.js`;
-        navigator.serviceWorker.register(swUrl)
+        navigator.serviceWorker.register('/service-worker.js')
           .then(swReg => {
             console.log('Service Worker is registered', swReg);
+            // After registration, check for permission
+            if (Notification.permission === 'default') {
+              Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                  // Show a test notification to confirm subscription
+                  const options = {
+                    body: 'Θα λαμβάνετε ειδοποιήσεις για σημαντικές ενημερώσεις.',
+                    icon: '/favicon.svg',
+                  };
+                  swReg.showNotification('Οι ειδοποιήσεις ενεργοποιήθηκαν!', options);
+                }
+              });
+            }
           })
           .catch(error => {
             console.error('Service Worker Error', error);
@@ -58,13 +82,9 @@ const App: React.FC = () => {
       }
     };
     
-    window.addEventListener('load', registerServiceWorker);
-    
+    setupServiceWorkerAndNotifications();
     loadNews(country);
 
-    return () => {
-        window.removeEventListener('load', registerServiceWorker);
-    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
