@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 interface HeaderProps {
     country: string | null;
     onCountryChange: (country: string | null) => void;
+    showHomeButton: boolean;
+    onGoHome: () => void;
 }
 
 const TimeDisplay: React.FC = () => {
@@ -38,7 +40,7 @@ const TimeDisplay: React.FC = () => {
 };
 
 
-const Header: React.FC<HeaderProps> = ({ country, onCountryChange }) => {
+const Header: React.FC<HeaderProps> = ({ country, onCountryChange, showHomeButton, onGoHome }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -59,9 +61,15 @@ const Header: React.FC<HeaderProps> = ({ country, onCountryChange }) => {
         <header className="py-3 px-4 sm:px-6 lg:px-8 border-b border-stone-200 bg-stone-50/90 backdrop-blur-sm sticky top-0 z-20">
             <div className="container mx-auto flex justify-between items-center gap-4">
                 <div className="flex items-center gap-4 md:gap-6">
-                    <h1 className="text-2xl font-bold tracking-tight font-serif uppercase">
-                        THE QBIT
-                    </h1>
+                     {showHomeButton ? (
+                        <button onClick={onGoHome} className="text-2xl font-bold tracking-tight font-serif uppercase hover:text-stone-600 transition-colors" aria-label="Επιστροφή στην αρχική">
+                            THE QBIT
+                        </button>
+                    ) : (
+                        <h1 className="text-2xl font-bold tracking-tight font-serif uppercase">
+                           THE QBIT
+                        </h1>
+                    )}
                     <TimeDisplay />
                 </div>
 

@@ -91,12 +91,26 @@ const searchTool: FunctionDeclaration = {
     },
 };
 
-const getBriefingPrompt = (date: Date, country?: string | null): string => {
+const getBriefingPrompt = (date: Date, country?: string | null, category?: string | null): string => {
     const dayOfWeek = new Intl.DateTimeFormat('el-GR', { weekday: 'long' }).format(date);
     const formattedDate = new Intl.DateTimeFormat('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
     
-    const searchTarget = country === 'Ελλάδα' ? 'την Ελλάδα' : 'τον κόσμο';
-    const searchQuerySuggestion = country === 'Ελλάδα' ? `σημαντικότερες ελληνικές ειδήσεις ${formattedDate}` : `world news ${formattedDate}`;
+    let selectionCriteria: string;
+    let searchTarget: string;
+    let searchQuerySuggestion: string;
+
+    if (category) {
+        searchTarget = `την κατηγορία "${category}"`;
+        selectionCriteria = `Επίλεξε τις 3 **σημαντικότερες** και πιο ενδιαφέρουσες ειδήσεις από την κατηγορία **${category}**.`;
+        searchQuerySuggestion = country === 'Ελλάδα' ? `ελληνικές ειδήσεις ${category.toLowerCase()} ${formattedDate}` : `${category.toLowerCase()} world news ${formattedDate}`;
+    } else {
+        searchTarget = country === 'Ελλάδα' ? 'την Ελλάδα' : 'τον κόσμο';
+        selectionCriteria = `Επίλεξε ακριβώς 3 από τις πιο **σημαντικές** ειδήσεις. Η επιλογή σου **πρέπει** να περιλαμβάνει:
+        - Την 1 κορυφαία είδηση από την κατηγορία "Politics".
+        - Την 1 κορυφαία είδηση από την κατηγορία "Economy".
+        - Την 1 σημαντικότερη είδηση από οποιαδήποτε άλλη κατηγορία.`;
+        searchQuerySuggestion = country === 'Ελλάδα' ? `σημαντικότερες ελληνικές ειδήσεις ${formattedDate}` : `world news ${formattedDate}`;
+    }
 
     return `
     Λειτούργησε ως ένας διορατικός αναλυτής ειδήσεων και αρχισυντάκτης για το THE QBIT. Η φωνή σου είναι αυτή ενός ειδικού σχολιαστή που συνδέει διαφορετικά γεγονότα, διαβάζει πίσω από τις γραμμές και εξηγεί τις βαθύτερες επιπτώσεις. Δεν αναφέρεις απλώς ειδήσεις· παρέχεις κατανόηση.
@@ -104,12 +118,12 @@ const getBriefingPrompt = (date: Date, country?: string | null): string => {
 
     **Βασικές Οδηγίες**:
     1.  **Χρήση Εργαλείου**: Πρέπει **οπωσδήποτε** να χρησιμοποιήσεις το εργαλείο 'searchWeb' για να βρεις τα άρθρα. Διατύπωσε ένα κατάλληλο ερώτημα (π.χ., "${searchQuerySuggestion}"). Βάσισε ολόκληρη την απάντησή σου **αποκλειστικά** στα αποτελέσματα της αναζήτησης.
-    2.  **Επιλογή Ειδήσεων**: Επίλεξε ακριβώς 3 από τις πιο συναρπαστικές ειδήσεις. Η επιλογή σου πρέπει να αντικατοπτρίζει αυτό που προκαλεί συζητήσεις και έχει πραγματικό αντίκτυπο στη ζωή των ανθρώπων.
+    2.  **Επιλογή Ειδήσεων**: ${selectionCriteria}
     3.  **Βάθος & Ανάλυση**: Για κάθε είδηση, γράψε μια **σε βάθος ανάλυση 3-5 παραγράφων**. Μην κάνεις απλή περίληψη. Εξήγησε το πλαίσιο, το ιστορικό, τι μπορεί να συμβεί στη συνέχεια και γιατί αυτή η είδηση είναι σημαντική. Πρόσθεσε τη δική σου αναλυτική προοπτική, συνδέοντας τα γεγονότα με ευρύτερες τάσεις.
 
     **Οδηγίες Συγγραφής & Τόνου Φωνής**:
-    *   **Τίτλοι**: Οι τίτλοι των ειδήσεων ('title') πρέπει να είναι θεματικοί και να αποτυπώνουν την ουσία της ανάλυσής σου, όχι απλώς να επαναλαμβάνουν την είδηση. Παραδείγματα: "Στα ΕΛΤΑ, λουκέτα και αντιδράσεις", "Eurofighter στην Τουρκία: ρήτρες και ισοζύγια".
-    *   **Annotations**: Για κάθε είδηση, εντόπισε 2-3 όρους-κλειδιά. Η 'explanation' πρέπει να είναι μια **πλούσια, ολόκληρη παράγραφος** που παρέχει βαθύ контекст. Για ένα πρόσωπο, εξήγησε τον ρόλο και την επιρροή του. Για μια πολιτική, εξήγησε την ιστορία και τις πραγματικές της συνέπειες.
+    *   **Τίτλοι**: Οι τίτλοι των ειδήσεων ('title') πρέπει να είναι θεματικοί και να αποτυπώνουν την ουσία της ανάλυσής σου. Παραδείγματα: "Στα ΕΛΤΑ, λουκέτα και αντιδράσεις", "Eurofighter στην Τουρκία: ρήτρες και ισοζύγια".
+    *   **Annotations**: Για κάθε είδηση, εντόπισε 2-3 όρους-κλειδιά. Η 'explanation' πρέπει να είναι μια **πλούσια, ολόκληρη παράγραφος** που παρέχει βαθύ контекст.
 
     **Δομή Απάντησης JSON**:
     Η τελική σου απάντηση πρέπει να είναι ένα αντικείμενο JSON με τα εξής κλειδιά: 'greeting', 'intro', 'dailySummary', 'stories', 'outro'.
@@ -138,7 +152,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).end('Method Not Allowed');
     }
 
-    const { date: dateString, country: countryString, lat, lon } = req.query;
+    const { date: dateString, country: countryString, category: categoryString } = req.query;
 
     if (!dateString || typeof dateString !== 'string') {
         return res.status(400).json({ error: 'Date parameter is required.' });
@@ -146,6 +160,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const date = new Date(dateString);
     const country = typeof countryString === 'string' ? countryString : null;
+    const category = typeof categoryString === 'string' ? categoryString : null;
     
     let rawResponseText: string | undefined = "";
     const allSources: StorySource[] = [];
@@ -153,7 +168,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         const tools: any[] = [{ functionDeclarations: [searchTool] }];
         const config: any = {
-            temperature: 0.3, // Slightly higher temp for more analytical and nuanced language
+            temperature: 0.3, 
             tools: tools,
         };
 
@@ -162,7 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             config: config,
         });
 
-        const prompt = getBriefingPrompt(date, country);
+        const prompt = getBriefingPrompt(date, country, category);
         let result = await chat.sendMessage({ message: prompt });
         
         while (true) {
@@ -204,13 +219,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             sources: allSources,
         };
         
-        // Deduplicate sources
         const uniqueSources = Array.from(new Map<string, StorySource>(
             finalBriefing.sources.filter(s => s.uri).map(source => [source.uri, source])
         ).values());
         finalBriefing.sources = uniqueSources;
 
-        res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300'); // Cache for 1 min, stale for 5 mins
+        res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
         return res.status(200).json(finalBriefing);
 
     } catch (error) {
