@@ -42,9 +42,8 @@ const renderSummaryWithAnnotations = (story: Story) => {
 const StoryCard: React.FC<StoryCardProps> = ({ story }) => {
   return (
     <article>
-        <p className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-2">{story.category}</p>
-        <h2 className="text-3xl font-semibold font-serif text-stone-900 mb-4">{story.title}</h2>
-        <div className="text-lg leading-relaxed text-stone-700">
+        <h2 className="text-2xl font-bold font-serif text-stone-900 mb-4">{story.title}</h2>
+        <div className="text-base leading-relaxed text-stone-700">
             {renderSummaryWithAnnotations(story)}
         </div>
     </article>

@@ -22,13 +22,9 @@ export interface StorySource {
 export interface BriefingContent {
   greeting: string;
   intro: string;
-  timestamp: string;
+  dailySummary: string;
   stories: Story[];
   outro: string;
-  weather?: {
-    description: string;
-    temperature: string;
-  };
   localTime?: string;
 }
 

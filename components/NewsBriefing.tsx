@@ -23,39 +23,17 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
         }
     }, [loadTime]);
 
-    const categoryOrder = ['Πολιτική', 'Οικονομία', 'Κόσμος', 'Κοινωνία', 'Αθλητισμός', 'Τεχνολογία', 'Lifestyle'];
-
-    const sortedStories = useMemo(() => {
-        if (!content.stories) return [];
-        return [...content.stories].sort((a, b) => {
-            const indexA = categoryOrder.indexOf(a.category);
-            const indexB = categoryOrder.indexOf(b.category);
-
-            // Handle cases where a category might not be in our predefined list
-            if (indexA === -1) return 1;
-            if (indexB === -1) return -1;
-            
-            // Sort by category order first
-            if (indexA !== indexB) {
-                return indexA - indexB;
-            }
-
-            // Then, sort by importance (descending) within the same category
-            return b.importance - a.importance;
-        });
-    }, [content.stories]);
-    
     return (
         <div className="max-w-3xl mx-auto">
             
-            <header className="text-center mb-12">
-                <p className="text-xl text-stone-600">{content.greeting}</p>
-                <h1 className="text-3xl md:text-4xl font-serif my-2 text-stone-900">{content.intro}</h1>
-                <p className="text-sm text-stone-500">{content.timestamp}</p>
+            <header className="mb-12">
+                <h1 className="text-4xl md:text-5xl font-serif mb-2 text-stone-900">{content.greeting}</h1>
+                <p className="text-lg text-stone-600 mb-6">{content.intro}</p>
+                <p className="text-base text-stone-800 leading-relaxed">{content.dailySummary}</p>
             </header>
 
             <main className="space-y-12">
-                {sortedStories.map((story) => (
+                {content.stories.map((story) => (
                     <StoryCard key={story.id} story={story} />
                 ))}
             </main>
