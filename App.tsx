@@ -3,7 +3,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import NewsBriefing from './components/NewsBriefing';
-import LoadingSpinner from './components/LoadingSpinner';
+import GenerationScreen from './components/LoadingSpinner';
 import { getDailyBriefing } from './services/geminiService';
 import type { Briefing } from './types';
 
@@ -16,21 +16,20 @@ const App: React.FC = () => {
   const [loadingMessage, setLoadingMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [country, setCountry] = useState<string | null>('Ελλάδα');
-  const [currentDate, setCurrentDate] = useState(new Date());
 
-  const loadNews = useCallback(async (date: Date, newCountry: string | null) => {
+  const loadNews = useCallback(async (newCountry: string | null) => {
     setStatus('loading');
     setBriefing(null);
     setError(null);
     setLoadTime(null);
-    setLoadingMessage(newCountry ? `Αναζήτηση ειδήσεων στην ${newCountry}...` : "Αναζήτηση παγκόσμιων ειδήσεων...");
+    setLoadingMessage(newCountry ? `Δημιουργία сводки για την ${newCountry}...` : "Δημιουργία παγκόσμιας сводки...");
 
     const startTime = performance.now();
     try {
-      const { briefing: fetchedBriefing } = await getDailyBriefing(date, newCountry);
+      const { briefing: fetchedBriefing } = await getDailyBriefing(new Date(), newCountry);
       
       if (!fetchedBriefing.content.body) {
-        setError("Δεν βρέθηκαν ειδήσεις για αυτή την ημερομηνία. Παρακαλώ επιλέξτε άλλη ημέρα.");
+        setError("Δεν βρέθηκαν ειδήσεις για σήμερα. Παρακαλώ δοκιμάστε ξανά αργότερα.");
         setStatus('error');
       } else {
         setBriefing(fetchedBriefing);
@@ -46,11 +45,8 @@ const App: React.FC = () => {
   }, []);
   
   useEffect(() => {
-    // Wrap Service Worker registration in a 'load' event listener
-    // to prevent "The document is in an invalid state" error.
     const registerServiceWorker = () => {
       if ('serviceWorker' in navigator && 'PushManager' in window) {
-        // Construct the full URL to the service worker to avoid cross-origin issues in specific environments.
         const swUrl = `${window.location.origin}/service-worker.js`;
         navigator.serviceWorker.register(swUrl)
           .then(swReg => {
@@ -64,10 +60,8 @@ const App: React.FC = () => {
     
     window.addEventListener('load', registerServiceWorker);
     
-    // Initial load
-    loadNews(currentDate, country);
+    loadNews(country);
 
-    // Cleanup listener on component unmount
     return () => {
         window.removeEventListener('load', registerServiceWorker);
     };
@@ -76,24 +70,12 @@ const App: React.FC = () => {
 
   const handleCountryChange = (newCountry: string | null) => {
     setCountry(newCountry);
-    setCurrentDate(new Date()); // Reset to today when country changes
-    loadNews(new Date(), newCountry);
-  };
-
-  const handleDateChange = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentDate);
-    if (direction === 'prev') {
-      newDate.setDate(newDate.getDate() - 1);
-    } else {
-      newDate.setDate(newDate.getDate() + 1);
-    }
-    setCurrentDate(newDate);
-    loadNews(newDate, country);
+    loadNews(newCountry);
   };
 
   const renderContent = () => {
     if (status === 'loading') {
-        return <LoadingSpinner message={loadingMessage} />;
+        return <GenerationScreen message={loadingMessage} />;
     }
     
     if (status === 'error') {
@@ -102,7 +84,7 @@ const App: React.FC = () => {
                 <h2 className="text-2xl font-serif mb-4 text-red-700">Κάτι πήγε στραβά</h2>
                 <p className="text-stone-600 mb-8">{error || 'Προέκυψε ένα μη αναμενόμενο σφάλμα.'}</p>
                 <button
-                    onClick={() => loadNews(currentDate, country)}
+                    onClick={() => loadNews(country)}
                     className="px-8 py-3 bg-stone-900 text-stone-50 font-bold tracking-wider uppercase hover:bg-stone-700 transition-colors"
                 >
                     Δοκιμάστε Ξανά
@@ -123,8 +105,6 @@ const App: React.FC = () => {
       <Header 
         country={country}
         onCountryChange={handleCountryChange}
-        currentDate={currentDate}
-        onDateChange={handleDateChange}
       />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 flex-grow w-full">
         {renderContent()}

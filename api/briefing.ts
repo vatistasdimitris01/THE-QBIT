@@ -107,7 +107,8 @@ const getBriefingPrompt = (date: Date, country?: string | null): string => {
     `;
 }
 
-export default async function handler(req: VerrcelRequest, res: VercelResponse) {
+// FIX: Corrected typo 'VerrcelRequest' to 'VercelRequest'.
+export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!GEMINI_API_KEY || !CSE_API_KEY || !CSE_ID) {
         return res.status(500).json({ error: "Server-side API keys are not configured." });
     }

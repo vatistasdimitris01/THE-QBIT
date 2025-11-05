@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { Briefing } from '../types';
 import ShareButton from './ShareButton';
 import Annotation from './Annotation';
+import SourceList from './SourceList';
 
 interface NewsBriefingProps {
   briefing: Briefing;
@@ -87,52 +88,7 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
 
             {sources && sources.length > 0 && (
                 <div className="mt-24 pt-8 border-t border-stone-200">
-                    <div className="text-center mb-12">
-                        <h3 className="inline-block bg-orange-500 text-white text-sm font-bold tracking-wider uppercase px-4 py-2 rounded-full shadow">Άρθρα που βρέθηκαν</h3>
-                    </div>
-                     <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-                        {sources.map((source, index) => {
-                           try {
-                            const domain = new URL(source.uri).hostname.replace(/^www\./, '');
-                            const faviconUrl = `https://${domain}/favicon.ico`;
-                            return (
-                               <li key={`${source.uri}-${index}`} className="relative group">
-                                   <div className="absolute -bottom-1 -right-1 h-full w-full bg-orange-200 rounded-lg transition-transform duration-300 ease-in-out group-hover:rotate-3"></div>
-                                   <div className="absolute -bottom-2 -right-2 h-full w-full bg-orange-300 rounded-lg transition-transform duration-300 ease-in-out group-hover:rotate-6"></div>
-                                   <a 
-                                     href={source.uri} 
-                                     target="_blank" 
-                                     rel="noopener noreferrer" 
-                                     className="relative flex items-center gap-4 p-4 bg-white border border-stone-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 ease-in-out w-full h-full transform group-hover:-translate-x-1 group-hover:-translate-y-1"
-                                   >
-                                     <img 
-                                         src={faviconUrl} 
-                                         alt={`Favicon for ${domain}`}
-                                         className="w-10 h-10 flex-shrink-0 bg-white rounded-md border border-stone-200 p-1 object-contain"
-                                         width="40"
-                                         height="40"
-                                         onError={(e) => {
-                                            e.currentTarget.onerror = null; // prevents looping
-                                            e.currentTarget.src = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2U1ZTdlYiI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6Ij48L3BhdGg+PC9zdmc+`;
-                                         }}
-                                     />
-                                     <div className="overflow-hidden">
-                                         <p className="text-base font-medium text-stone-800 truncate" title={source.title}>
-                                             {source.title}
-                                         </p>
-                                         <p className="text-sm text-stone-500">
-                                             {domain}
-                                         </p>
-                                     </div>
-                                   </a>
-                               </li>
-                            )
-                           } catch (e) {
-                               console.warn("Could not parse source URI:", source.uri);
-                               return null;
-                           }
-                        })}
-                    </ul>
+                    <SourceList sources={sources} />
                 </div>
             )}
         </div>

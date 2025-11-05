@@ -16,17 +16,30 @@
       h1, h2, h3, h4, h5, h6, .font-serif {
         font-family: 'Playfair Display', serif;
       }
+      @keyframes breath {
+        0%, 100% {
+          transform: scale(0.95);
+          opacity: 0.7;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 1;
+        }
+      }
+      .animate-breath {
+        animation: breath 3s ease-in-out infinite;
+      }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@vercel/node": "https://aistudiocdn.com/@vercel/node@^5.5.4",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
     "vite": "https://aistudiocdn.com/vite@^7.2.0",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0",
-    "@vercel/node": "https://aistudiocdn.com/@vercel/node@^5.5.4"
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0"
   }
 }
 </script>
