@@ -22,7 +22,7 @@ const App: React.FC = () => {
     setBriefing(null);
     setError(null);
     setLoadTime(null);
-    setLoadingMessage(newCountry ? `Δημιουργία сводки για την ${newCountry}...` : "Δημιουργία παγκόσμιας сводки...");
+    setLoadingMessage(newCountry ? `Δημιουργία ενημέρωσης για την ${newCountry}...` : "Δημιουργία παγκόσμιας ενημέρωσης...");
 
     const startTime = performance.now();
     try {

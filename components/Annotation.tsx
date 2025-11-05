@@ -32,11 +32,10 @@ const Annotation: React.FC<AnnotationProps> = ({ term, explanation }) => {
         </svg>
       </span>
       {isOpen && (
-        <div className="my-4 relative overflow-hidden">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-400 rounded-full"></div>
-          <div className="pl-6 text-base text-stone-800 bg-orange-100/30 p-4 border border-orange-200/50 rounded-r-md">
+        <div className="my-3 pl-4 relative border-l-4 border-orange-400">
+          <p className="text-base text-stone-700 italic">
             {explanation}
-          </div>
+          </p>
         </div>
       )}
     </>

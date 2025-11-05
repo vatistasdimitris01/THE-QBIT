@@ -22,21 +22,21 @@ const SourceList: React.FC<SourceListProps> = ({ sources }) => {
             <div className="max-w-2xl mx-auto">
                  <div className="text-center mb-8">
                     <h3 className="text-lg font-semibold font-serif text-stone-800">Πηγές Ειδήσεων</h3>
-                    <button onClick={() => setIsOpen(false)} className="text-sm text-orange-600 hover:underline">Απόκρυψη</button>
+                    <button onClick={() => setIsOpen(false)} className="text-sm text-stone-600 hover:underline">Απόκρυψη</button>
                 </div>
                 <ul className="space-y-3">
                     {sources.map((source, index) => {
                         const domain = getDomain(source.uri);
                         if (!domain) return null;
                         
-                        const faviconUrl = `https://${domain}/favicon.ico`;
+                        const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
                         return (
                             <li key={`${source.uri}-${index}`}>
                                 <a 
                                     href={source.uri} 
                                     target="_blank" 
                                     rel="noopener noreferrer" 
-                                    className="flex items-center gap-4 p-3 bg-white border border-stone-200 rounded-lg shadow-sm hover:shadow-md hover:border-orange-300 transition-all duration-200 ease-in-out w-full h-full"
+                                    className="flex items-center gap-4 p-3 bg-white border border-stone-200 rounded-lg shadow-sm hover:shadow-md hover:border-stone-400 transition-all duration-200 ease-in-out w-full h-full"
                                 >
                                     <img 
                                         src={faviconUrl} 
@@ -68,37 +68,35 @@ const SourceList: React.FC<SourceListProps> = ({ sources }) => {
 
     return (
         <div className="text-center">
-            <div className="text-center mb-8">
-                <h3 className="inline-block bg-orange-500 text-white text-sm font-bold tracking-wider uppercase px-4 py-2 rounded-full shadow">Άρθρα που βρέθηκαν</h3>
+            <div className="text-center mb-6">
+                <h3 className="inline-block bg-stone-800 text-stone-100 text-sm font-bold tracking-wider uppercase px-4 py-2 rounded-full shadow">Άρθρα που βρέθηκαν</h3>
             </div>
-            <button
-                onClick={() => setIsOpen(true)}
-                className="relative h-12 w-48 mx-auto group focus:outline-none"
-                aria-label="Εμφάνιση πηγών ειδήσεων"
-            >
-                {displayedSources.map((source, index) => {
-                    const domain = getDomain(source.uri);
-                    if (!domain) return null;
-                    const faviconUrl = `https://${domain}/favicon.ico`;
-                    return (
-                        <img
-                            key={`${source.uri}-${index}`}
-                            src={faviconUrl}
-                            alt={`Favicon for ${domain}`}
-                            className="absolute top-0 w-10 h-10 bg-white rounded-full border-2 border-white shadow-md object-contain transition-transform duration-300 ease-in-out group-hover:rotate-12"
-                            style={{
-                                left: `${(index / displayedSources.length) * 65}%`,
-                                zIndex: displayedSources.length - index,
-                                transform: `translateX(-50%) rotate(${Math.random() * 20 - 10}deg)`
-                            }}
-                            onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                            }}
-                        />
-                    );
-                })}
-            </button>
-             <p className="text-sm text-stone-500 mt-4">Κάντε κλικ για να δείτε τις {sources.length} πηγές</p>
+            <div className="flex justify-center mb-4">
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className="flex items-center -space-x-4 hover:space-x-[-12px] transition-all duration-300 ease-in-out group focus:outline-none"
+                    aria-label="Εμφάνιση πηγών ειδήσεων"
+                >
+                    {displayedSources.map((source, index) => {
+                        const domain = getDomain(source.uri);
+                        if (!domain) return null;
+                        const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+                        return (
+                            <img
+                                key={`${source.uri}-${index}`}
+                                src={faviconUrl}
+                                alt={`Favicon for ${domain}`}
+                                className="w-12 h-12 bg-white rounded-full border-2 border-stone-100 shadow-lg object-contain transition-all duration-300"
+                                style={{ zIndex: displayedSources.length - index }}
+                                onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                }}
+                            />
+                        );
+                    })}
+                </button>
+            </div>
+             <p className="text-sm text-stone-500">Κάντε κλικ για να δείτε τις {sources.length} πηγές</p>
         </div>
     );
 };
