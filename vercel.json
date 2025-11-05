@@ -1,4 +1,8 @@
 {
+  "version": 2,
+  "builds": [
+    { "src": "api/briefing.ts", "use": "@vercel/node" }
+  ],
   "rewrites": [
     {
       "source": "/((?!api/|.*\\.).*)",
