@@ -48,3 +48,24 @@ export async function getDailyBriefing(date: Date, country: string | null, locat
         throw new Error("Δεν ήταν δυνατή η ανάκτηση των κορυφαίων ειδήσεων.");
     }
 }
+
+export async function getSharedBriefing(shareId: string): Promise<Briefing> {
+    try {
+        const response = await fetch(`/api/share/get?id=${shareId}`);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'This link may have expired or is invalid.' }));
+             throw new Error(errorData.error || `Failed to load shared content (status ${response.status})`);
+        }
+        
+        const briefing: Briefing = await response.json();
+        return briefing;
+
+    } catch (error) {
+        console.error("Error fetching shared briefing:", error);
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error("Could not retrieve the shared briefing.");
+    }
+}

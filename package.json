@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@google/genai": "^1.28.0",
+    "@vercel/kv": "^2.0.0",
+    "nanoid": "^5.0.7",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

@@ -27,17 +27,29 @@ You need to add three secret keys to your Vercel project.
         3.  Configure it to search the entire web or specific news sites.
         4.  On the "Basics" tab of the control panel, find and copy your "Search engine ID".
 
-## How to Add Variables to Vercel
+---
+## Vercel KV Store (Required for Sharing Feature)
+
+The shareable link feature **requires** a Vercel KV store to be connected to your project.
+
+1.  Go to your project's dashboard on Vercel.
+2.  Click on the **Storage** tab.
+3.  Click **Create Database** and select **KV (Redis)**.
+4.  Follow the prompts to create the store and connect it to your current project.
+5.  Vercel will automatically add the necessary environment variables (like `KV_URL`, `KV_REST_API_URL`, etc.) to your project settings. **You do not need to add these manually.**
+
+---
+## How to Add API Variables to Vercel
 
 1.  Go to your project's dashboard on Vercel.
 2.  Click on the "Settings" tab.
 3.  In the left sidebar, click on "Environment Variables".
-4.  For each key above, add a new variable:
+4.  For each key (`API_KEY`, `CSE_API_KEY`, `CSE_ID`), add a new variable:
     *   Enter the name (e.g., `API_KEY`).
     *   Paste the corresponding value.
     *   Ensure the type is "Secret".
     *   Click "Add".
 5.  Repeat for all three variables.
-6.  After adding the variables, you may need to redeploy your project for the changes to take effect.
+6.  After adding the variables and connecting the KV store, you must redeploy your project for the changes to take effect.
 
 **IMPORTANT:** Never expose these keys in your frontend code or commit them to your Git repository. Using Vercel's environment variables is the correct and secure way to handle them.

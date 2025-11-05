@@ -89,7 +89,7 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
                 <p className="text-center text-lg text-stone-700 mb-8">{content.outro}</p>
                 
                 <div className="flex justify-center relative mb-12">
-                    <ShareButton />
+                    <ShareButton briefing={briefing} />
                     {showLoadTime && loadTime && (
                         <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full whitespace-nowrap">
                             Φορτώθηκε σε {loadTime}ms

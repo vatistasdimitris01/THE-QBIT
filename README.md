@@ -29,6 +29,15 @@ To run this application, you need to configure the following environment variabl
         3.  On the "Basics" tab of the control panel, find and copy your "Search engine ID".
 
 ---
+## Vercel KV Store (Required for Sharing)
+
+This project uses **Vercel KV** (a Redis-compatible key-value store) to handle shareable links. You **must** create and connect a KV store to your Vercel project for the share feature to work.
+
+1.  Go to the **Storage** tab in your Vercel project dashboard.
+2.  Click **Create Database** and select **KV (Redis)**.
+3.  Follow the prompts to create the store and connect it to your project. Vercel will automatically add the necessary environment variables (`KV_URL`, `KV_REST_API_URL`, etc.) to your project.
+
+---
 
 ## Local Development
 
@@ -40,11 +49,20 @@ To run the project locally, you need to have Node.js and npm installed.
     ```
 
 2.  **Set Up Environment Variables:**
-    Create a file named `.env` in the root of the project and add your keys:
+    Create a file named `.env` in the root of the project and add your keys. You will also need to get the Vercel KV variables for local development.
     ```
+    # Gemini and Google Search
     API_KEY="your_gemini_api_key"
     CSE_API_KEY="your_google_search_api_key"
     CSE_ID="your_custom_search_engine_id"
+
+    # Vercel KV (for sharing feature)
+    # Go to your Vercel project -> Storage -> [Your KV Store] -> .env.local
+    # Copy and paste the variables here.
+    KV_URL="your_kv_url"
+    KV_REST_API_URL="your_kv_rest_api_url"
+    KV_REST_API_TOKEN="your_kv_rest_api_token"
+    KV_REST_API_READ_ONLY_TOKEN="your_kv_read_only_token"
     ```
 
 3.  **Run the Development Server:**
@@ -82,7 +100,7 @@ To run the project locally, you need to have Node.js and npm installed.
 3.  **Add Environment Variables to Vercel:**
     *   In your Vercel project settings, go to the **Environment Variables** tab.
     *   Add the `API_KEY`, `CSE_API_KEY`, and `CSE_ID` with their corresponding values.
-    *   Ensure the type is "Secret".
+    *   Ensure you have also connected the Vercel KV store as described above.
 
 4.  **Redeploy:**
     *   Go to the **Deployments** tab and trigger a new deployment. Vercel will now use the Vite preset to correctly build and deploy your application.

@@ -4,7 +4,7 @@ import Footer from './components/Footer';
 import NewsBriefing from './components/NewsBriefing';
 import GenerationScreen from './components/LoadingSpinner';
 import InitialScreen from './components/InitialScreen';
-import { getDailyBriefing } from './services/geminiService';
+import { getDailyBriefing, getSharedBriefing } from './services/geminiService';
 import type { Briefing } from './types';
 
 type AppStatus = 'initial' | 'loading' | 'error' | 'success';
@@ -18,9 +18,33 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [country, setCountry] = useState<string | null>('Ελλάδα');
   const [location, setLocation] = useState<Location>(null);
+  const [isSharedView, setIsSharedView] = useState(false);
 
   useEffect(() => {
-    // Get user's location once on initial load.
+    // Check for a share ID on initial load
+    const urlParams = new URLSearchParams(window.location.search);
+    const shareId = urlParams.get('share');
+
+    if (shareId) {
+        setIsSharedView(true);
+        setStatus('loading');
+        setLoadingMessage('Ανάκτηση κοινόχρηστης ενημέρωσης...');
+        
+        const loadShared = async () => {
+            try {
+                const fetchedBriefing = await getSharedBriefing(shareId);
+                setBriefing(fetchedBriefing);
+                setStatus('success');
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Δεν ήταν δυνατή η φόρτωση της κοινόχρηστης ενημέρωσης.");
+                setStatus('error');
+            }
+        };
+        loadShared();
+        return; // Stop further execution
+    }
+
+    // Get user's location once on initial load if not a shared view.
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -99,8 +123,13 @@ const App: React.FC = () => {
   };
   
   const handleGoHome = () => {
-    setStatus('initial');
-    setBriefing(null);
+    // If coming from a shared link, reload the page to the root.
+    if (isSharedView) {
+        window.location.href = window.location.origin;
+    } else {
+        setStatus('initial');
+        setBriefing(null);
+    }
   };
 
   const handleCountryChange = (newCountry: string | null) => {
@@ -112,7 +141,7 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (status === 'initial') {
+    if (status === 'initial' && !isSharedView) {
         return <InitialScreen onStartBriefing={handleStartBriefing} />;
     }
     
@@ -126,7 +155,7 @@ const App: React.FC = () => {
                 <h2 className="text-2xl font-serif mb-4 text-red-700">Κάτι πήγε στραβά</h2>
                 <p className="text-stone-600 mb-8">{error || 'Προέκυψε ένα μη αναμενόμενο σφάλμα.'}</p>
                 <button
-                    onClick={() => setStatus('initial')}
+                    onClick={handleGoHome}
                     className="px-8 py-3 bg-stone-900 text-stone-50 font-bold tracking-wider uppercase hover:bg-stone-700 transition-colors"
                 >
                     Επιστροφή στην Αρχική
@@ -147,8 +176,9 @@ const App: React.FC = () => {
       <Header 
         country={country}
         onCountryChange={handleCountryChange}
-        showHomeButton={status !== 'initial'}
+        showHomeButton={status !== 'initial' || isSharedView}
         onGoHome={handleGoHome}
+        isSharedView={isSharedView}
       />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 flex-grow w-full">
         {renderContent()}
