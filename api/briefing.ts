@@ -35,7 +35,7 @@ const CSE_ID = process.env.CSE_ID;
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-async function searchWeb(query: string): Promise<{ searchResultsString: string, sources: StorySource[] }> {
+async function searchWeb(query: string): Promise<{ searchResults: any[], sources: StorySource[] }> {
     const url = `https://www.googleapis.com/customsearch/v1?key=${CSE_API_KEY}&cx=${CSE_ID}&q=${encodeURIComponent(query)}`;
     
     try {
@@ -48,7 +48,7 @@ async function searchWeb(query: string): Promise<{ searchResultsString: string, 
         const data = await response.json();
         
         if (!data.items || data.items.length === 0) {
-            return { searchResultsString: "No results found.", sources: [] };
+            return { searchResults: [], sources: [] };
         }
 
         const sources: StorySource[] = data.items.map((item: any) => ({
@@ -56,15 +56,17 @@ async function searchWeb(query: string): Promise<{ searchResultsString: string, 
             uri: item.link,
         }));
 
-        const searchResultsString = data.items.map((item: any) => 
-            `Title: ${item.title}\nURL: ${item.link}\nSnippet: ${item.snippet}`
-        ).join('\n\n');
+        const searchResults = data.items.map((item: any) => ({
+            title: item.title,
+            link: item.link,
+            snippet: item.snippet
+        }));
 
-        return { searchResultsString, sources };
+        return { searchResults, sources };
 
     } catch (error) {
         console.error("Error calling Google Custom Search API:", error);
-        return { searchResultsString: "Error performing search.", sources: [] };
+        return { searchResults: [], sources: [] };
     }
 }
 
@@ -152,12 +154,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 if (call.name === 'searchWeb') {
                     const query = call.args?.query;
                     if (typeof query === 'string') {
-                        const { searchResultsString, sources } = await searchWeb(query);
+                        const { searchResults, sources } = await searchWeb(query);
                         allSources.push(...sources);
                         functionResponseParts.push({
                             functionResponse: {
                                 name: 'searchWeb',
-                                response: { content: searchResultsString },
+                                response: { results: searchResults },
                             }
                         });
                     }
