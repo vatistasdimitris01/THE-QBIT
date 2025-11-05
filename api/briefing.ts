@@ -152,18 +152,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             tools: tools,
         };
 
-        if (lat && lon && typeof lat === 'string' && typeof lon === 'string') {
-            tools.push({ googleMaps: {} });
-            config.toolConfig = {
-                retrievalConfig: {
-                    latLng: {
-                        latitude: parseFloat(lat),
-                        longitude: parseFloat(lon),
-                    }
-                }
-            };
-        }
-
         const chat = ai.chats.create({
             model: "gemini-2.5-flash",
             config: config,
