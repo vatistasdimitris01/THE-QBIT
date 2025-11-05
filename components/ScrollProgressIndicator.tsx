@@ -6,7 +6,7 @@ interface ScrollProgressIndicatorProps {
 }
 
 const ScrollProgressIndicator: React.FC<ScrollProgressIndicatorProps> = ({ storiesLeft, isVisible }) => {
-    const storyText = storiesLeft === 1 ? 'story remaining' : 'stories remaining';
+    const storyText = storiesLeft === 1 ? 'ιστορία απομένει' : 'ιστορίες απομένουν';
 
     return (
         <div 
