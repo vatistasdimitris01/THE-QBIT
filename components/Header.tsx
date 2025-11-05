@@ -16,6 +16,7 @@ const TimeDisplay: React.FC = () => {
             const timeString = now.toLocaleTimeString('el-GR', {
                 hour: '2-digit',
                 minute: '2-digit',
+                second: '2-digit',
                 hour12: false,
                 timeZone: 'Europe/Athens' 
             });
@@ -29,7 +30,7 @@ const TimeDisplay: React.FC = () => {
     }, []);
 
     if (!time) {
-        return <div className="text-xs text-stone-500 font-sans hidden sm:block h-5 w-12"></div>; // Placeholder for layout consistency
+        return <div className="text-xs text-stone-500 font-sans hidden sm:block h-5 w-20"></div>; // Placeholder for layout consistency
     }
 
     return (

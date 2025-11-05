@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import type { Briefing, Annotation as AnnotationType } from '../types';
 import ShareButton from './ShareButton';
 import SourceList from './SourceList';
 import StoryCard from './StoryCard';
+import ScrollProgressIndicator from './ScrollProgressIndicator';
 
 interface NewsBriefingProps {
   briefing: Briefing;
@@ -12,6 +13,9 @@ interface NewsBriefingProps {
 const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
     const { content, sources } = briefing;
     const [showLoadTime, setShowLoadTime] = useState(false);
+    const [storiesLeft, setStoriesLeft] = useState(0);
+    const [showIndicator, setShowIndicator] = useState(false);
+    const storyRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     useEffect(() => {
         if (loadTime !== null) {
@@ -23,6 +27,33 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
         }
     }, [loadTime]);
 
+    const handleScroll = useCallback(() => {
+        const storiesTotal = briefing.content.stories.length;
+        if (storiesTotal === 0) return;
+
+        const checkPoint = window.innerHeight * 0.4; // 40% from the top of the viewport
+
+        let firstVisibleIndex = storyRefs.current.findIndex(ref => ref && ref.getBoundingClientRect().bottom > checkPoint);
+
+        if (firstVisibleIndex === -1) {
+            // All stories are above the checkpoint, so we're at the end
+            setStoriesLeft(0);
+            setShowIndicator(false);
+            return;
+        }
+
+        const numStoriesLeft = storiesTotal - firstVisibleIndex;
+        setStoriesLeft(numStoriesLeft);
+        setShowIndicator(numStoriesLeft > 0 && numStoriesLeft <= 4);
+        
+    }, [briefing.content.stories.length]);
+
+    useEffect(() => {
+        handleScroll(); // Check position on initial render
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [handleScroll]);
+
     return (
         <div className="max-w-3xl mx-auto">
             
@@ -33,8 +64,15 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
             </header>
 
             <main className="space-y-12">
-                {content.stories.map((story) => (
-                    <StoryCard key={story.id} story={story} />
+                {content.stories.map((story, index) => (
+                    // Fix: The ref callback function should not return a value. The original
+                    // arrow function `el => storyRefs.current[index] = el` implicitly returned
+                    // the assigned element `el`, causing a type error. By adding curly braces,
+                    // the arrow function body becomes a statement block with an implicit `undefined`
+                    // return, which satisfies the `(instance: HTMLDivElement | null) => void` type.
+                    <div key={story.id} ref={el => { storyRefs.current[index] = el; }}>
+                        <StoryCard story={story} />
+                    </div>
                 ))}
             </main>
 
@@ -54,6 +92,8 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
                      <SourceList sources={sources} />
                 )}
             </footer>
+            
+            <ScrollProgressIndicator storiesLeft={storiesLeft} isVisible={showIndicator} />
         </div>
     );
 };
