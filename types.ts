@@ -25,7 +25,6 @@ export interface BriefingContent {
   dailySummary: string;
   stories: Story[];
   outro: string;
-  localTime?: string;
 }
 
 export interface Briefing {

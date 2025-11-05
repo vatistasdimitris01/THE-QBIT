@@ -24,7 +24,6 @@ interface BriefingContent {
   dailySummary: string;
   stories: Story[];
   outro: string;
-  localTime?: string;
 }
 interface Briefing {
   content: BriefingContent;
@@ -40,22 +39,10 @@ const GEMINI_API_KEY = process.env.API_KEY;
 const CSE_API_KEY = process.env.CSE_API_KEY;
 const CSE_ID = process.env.CSE_ID;
 
-const GREEK_SITES = [
-    'kathimerini.gr', 'protothema.gr', 'in.gr', 'tovima.gr', 'tanea.gr',
-    'newsbomb.gr', 'news247.gr', 'skai.gr', 'ant1news.gr', 'ertnews.gr',
-    'open.tv', 'megatv.com', 'capital.gr', 'naftemporiki.gr', 'bdaily.gr',
-    'euro2day.gr', 'ot.gr', 'sport24.gr', 'gazzetta.gr', 'sdna.gr',
-    'onsports.gr', 'sport-fm.gr', 'filathlos.gr', 'techblog.gr', 'digitallife.gr',
-    'enternity.gr', 'insomnia.gr', 'techmaniacs.gr', 'thebest.gr', 'creta24.gr',
-    'thesstoday.gr', 'larissanet.gr', 'patrisnews.com'
-];
-
-
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-async function searchWeb(query: string, siteRestriction: string): Promise<{ searchResults: any[], sources: StorySource[] }> {
-    const finalQuery = siteRestriction ? `${query} (${siteRestriction})` : query;
-    const url = `https://www.googleapis.com/customsearch/v1?key=${CSE_API_KEY}&cx=${CSE_ID}&q=${encodeURIComponent(finalQuery)}`;
+async function searchWeb(query: string): Promise<{ searchResults: any[], sources: StorySource[] }> {
+    const url = `https://www.googleapis.com/customsearch/v1?key=${CSE_API_KEY}&cx=${CSE_ID}&q=${encodeURIComponent(query)}`;
     
     try {
         const response = await fetch(url);
@@ -105,43 +92,36 @@ const searchTool: FunctionDeclaration = {
 };
 
 const getBriefingPrompt = (date: Date, country?: string | null): string => {
-    const formattedDate = new Intl.DateTimeFormat('fr-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date); // YYYY-MM-DD
-    const localTime = new Intl.DateTimeFormat('el-GR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Athens' }).format(new Date());
-
-    let sourceInstructions = '';
-    if (country === 'Ελλάδα') {
-        sourceInstructions = `**Σημαντική Οδηγία Πηγών**: Η αναζήτηση ειδήσεων περιορίζεται σε μια προεπιλεμένη λίστα αξιόπιστων ελληνικών ειδησεογραφικών ιστοσελίδων. Βάσισε την απάντησή σου αποκλειστικά σε αυτές τις πηγές.`
-    }
+    const dayOfWeek = new Intl.DateTimeFormat('el-GR', { weekday: 'long' }).format(date);
+    const formattedDate = new Intl.DateTimeFormat('el-GR', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+    
+    const searchTarget = country === 'Ελλάδα' ? 'την Ελλάδα' : 'τον κόσμο';
+    const searchQuerySuggestion = country === 'Ελλάδα' ? `σημαντικότερες ελληνικές ειδήσεις ${formattedDate}` : `world news ${formattedDate}`;
 
     return `
     Λειτούργησε ως αρχισυντάκτης για ένα ελίτ, μινιμαλιστικό ειδησεογραφικό brief ονόματι THE QBIT. Η φωνή σου είναι έγκυρη, περιεκτική και ελαφρώς λογοτεχνική.
-    Ο στόχος σου είναι να εντοπίσεις τις 3 πιο σημαντικές ειδήσεις της ημέρας (${formattedDate}) για την ${country ? country : 'τον κόσμο'}.
+    Ο στόχος σου είναι να εντοπίσεις τις 3 ειδήσεις που πρέπει οπωσδήποτε να γνωρίζει ένας ενημερωμένος αναγνώστης σήμερα (${formattedDate}) για ${searchTarget}. Επικεντρώσου σε αυτές που προκαλούν συζητήσεις, έχουν τον μεγαλύτερο αντίκτυπο ή είναι οι πιο ενδιαφέρουσες.
 
     **Βασικές Οδηγίες**:
-    1.  **Χρήση Εργαλείου**: Πρέπει **οπωσδήποτε** να χρησιμοποιήσεις το εργαλείο 'searchWeb' για να βρεις τα άρθρα. Διατύπωσε ένα κατάλληλο ερώτημα (query) για τις κορυφαίες ειδήσεις (π.χ., "κορυφαίες ειδήσεις ${country || 'κόσμος'} ${formattedDate}"). Βάσισε ολόκληρη την απάντησή σου **αποκλειστικά** στα αποτελέσματα της αναζήτησης.
-    2.  **Επιλογή Ειδήσεων**: Επίλεξε ακριβώς 3 ειδήσεις:
-        *   Την κορυφαία είδηση από την κατηγορία 'Πολιτική'.
-        *   Την κορυφαία είδηση από την κατηγορία 'Οικονομία'.
-        *   Μία ακόμα σημαντική είδηση από οποιαδήποτε άλλη κατηγορία (π.χ., Κοινωνία, Κόσμος, Τεχνολογία).
-    ${sourceInstructions}
+    1.  **Χρήση Εργαλείου**: Πρέπει **οπωσδήποτε** να χρησιμοποιήσεις το εργαλείο 'searchWeb' για να βρεις τα άρθρα. Διατύπωσε ένα κατάλληλο ερώτημα (query) για τις κορυφαίες ειδήσεις (π.χ., "${searchQuerySuggestion}"). Βάσισε ολόκληρη την απάντησή σου **αποκλειστικά** στα αποτελέσματα της αναζήτησης.
+    2.  **Επιλογή Ειδήσεων**: Επίλεξε ακριβώς 3 από τις πιο συναρπαστικές ή σημαντικές ειδήσεις της ημέρας, ανεξαρτήτως κατηγορίας. Η επιλογή σου πρέπει να αντικατοπτρίζει αυτό που θα ήθελε να διαβάσει το κοινό, όχι απαραίτητα μόνο τις πιο "βαριές" πολιτικές ή οικονομικές ειδήσεις.
 
     **Οδηγίες Συγγραφής & Τόνου Φωνής**:
-    *   **Σύνοψη**: Για κάθε είδηση, γράψε μια ουδέτερη, πυκνή περίληψη 2-4 παραγράφων. Η γραφή σου πρέπει να είναι επαγγελματική και να εξηγεί το 'γιατί' πίσω από τα γεγονότα.
-    *   **Annotations**: Για κάθε είδηση, εντόπισε 2-3 όρους-κλειδιά ή φράσεις. Για κάθε όρο, γράψε μια **εκτενή, λεπτομερή επεξήγηση σε μορφή παραγράφου**. Η επεξήγηση πρέπει να παρέχει βαθύ контекст, ιστορικό ή ανάλυση. Μην γράφεις απλούς ορισμούς.
+    *   **Σύνοψη**: Για κάθε είδηση, γράψε μια ουδέτερη, πυκνή περίληψη 2-4 παραγράφων. Η γραφή σου πρέπει να είναι επαγγελματική και να εξηγεί το 'γιατί' πίσω από τα γεγονότα, δίνοντας έμφαση στον ανθρώπινο παράγοντα ή τον ευρύτερο αντίκτυπο.
+    *   **Annotations**: Για κάθε είδηση, εντόπισε 2-3 όρους-κλειδιά ή φράσεις. Για κάθε όρο, γράψε μια **εκτενή, λεπτομερή επεξήγηση σε μορφή ολόκληρης παραγράφου**. Η επεξήγηση πρέπει να παρέχει βαθύ контекст, ιστορικό ή ανάλυση που να εμπλουτίζει την κατανόηση του αναγνώστη. Μην γράφεις απλούς ορισμούς λεξικού.
 
     **Δομή Απάντησης JSON**:
-    Η τελική σου απάντηση πρέπει να είναι ένα αντικείμενο JSON με τα εξής κλειδιά: 'greeting', 'intro', 'dailySummary', 'stories', 'outro', 'localTime'.
+    Η τελική σου απάντηση πρέπει να είναι ένα αντικείμενο JSON με τα εξής κλειδιά: 'greeting', 'intro', 'dailySummary', 'stories', 'outro'.
     1.  'greeting': "Καλησπέρα"
     2.  'intro': "Ψάξαμε παντού. Βρήκαμε αυτό που έχει σημασία."
-    3.  'dailySummary': Μια παράγραφος που ξεκινά με την ημερομηνία και την ώρα και συνοψίζει σε μία πρόταση τις 3 επικεφαλίδες που επέλεξες. Παράδειγμα: "Τρίτη, 04/11/2025, ${localTime}. Η προθεσμία για τον ΟΠΕΚΕΠΕ λήγει σήμερα..., τα ΕΛΤΑ άρχισαν να κλείνουν καταστήματα..., και η υπογραφή σύμβασης Eurofighter...".
+    3.  'dailySummary': Μια παράγραφος που ξεκινά με την ημέρα και την ημερομηνία και συνοψίζει σε μία πρόταση τις 3 επικεφαλίδες που επέλεξες. Παράδειγμα: "${dayOfWeek}, ${formattedDate}. Η προθεσμία για τον ΟΠΕΚΕΠΕ λήγει σήμερα..., τα ΕΛΤΑ άρχισαν να κλείνουν καταστήματα..., και η υπογραφή σύμβασης Eurofighter...".
     4.  'stories': Ένας πίνακας με **ακριβώς 3** αντικείμενα ειδήσεων. Κάθε αντικείμενο πρέπει να έχει:
-        *   'category': 'Πολιτική', 'Οικονομία', ή άλλη σχετική κατηγορία.
+        *   'category': 'Πολιτική', 'Οικονομία', 'Κοινωνία', 'Κόσμος', 'Αθλητισμός', 'Τεχνολογία' κ.λπ.
         *   'title': Ένας σαφής, σύντομος τίτλος.
         *   'summary': Η περίληψη 2-4 παραγράφων, με '\\n' για αλλαγή γραμμής.
         *   'importance': Ακέραιος 1-3.
         *   'annotations': Ένας πίνακας με 2-3 αντικείμενα. Κάθε αντικείμενο πρέπει να έχει 'term', 'importance' (1-3), και 'explanation' (η λεπτομερής παράγραφος επεξήγησης).
-    5.  'outro': Μια σύντομη, στοχαστική πρόταση κλεισίματος. Παράδειγμα: "Και κάπως έτσι ξεκίνησε άλλη μια Τρίτη."
-    6.  'localTime': Η τρέχουσα ώρα Αθήνας σε μορφή HH:MM. Παράδειγμα: "${localTime}".
+    5.  'outro': Μια σύντομη, στοχαστική πρόταση κλεισίματος. Παράδειγμα: "Και κάπως έτσι ξεκίνησε άλλη μια ${dayOfWeek}."
 
     Η τελική έξοδος πρέπει να είναι ένα ενιαίο, minified αντικείμενο JSON. Μην συμπεριλάβεις τίποτα άλλο.
     `;
@@ -184,8 +164,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const prompt = getBriefingPrompt(date, country);
         let result = await chat.sendMessage({ message: prompt });
         
-        const siteRestriction = country === 'Ελλάδα' ? GREEK_SITES.map(site => `site:${site}`).join(' OR ') : '';
-
         while (true) {
             const functionCalls = result.functionCalls;
             if (!functionCalls || functionCalls.length === 0) { break; }
@@ -195,7 +173,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 if (call.name === 'searchWeb') {
                     const query = call.args?.query;
                     if (typeof query === 'string') {
-                        const { searchResults, sources } = await searchWeb(query, siteRestriction);
+                        const { searchResults, sources } = await searchWeb(query);
                         allSources.push(...sources);
                         functionResponseParts.push({
                             functionResponse: {

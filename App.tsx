@@ -147,7 +147,6 @@ const App: React.FC = () => {
       <Header 
         country={country}
         onCountryChange={handleCountryChange}
-        localTime={briefing?.content.localTime}
       />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 flex-grow w-full">
         {renderContent()}
