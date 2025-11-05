@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import NotificationBell from './NotificationBell';
 
 interface HeaderProps {
     country: string | null;
@@ -29,33 +30,36 @@ const Header: React.FC<HeaderProps> = ({ country, onCountryChange }) => {
                     THE QBIT
                 </h1>
 
-                <div className="relative" ref={dropdownRef}>
-                    <button
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="flex items-center gap-2 text-stone-700 font-medium hover:text-stone-900 transition-colors focus:outline-none py-2 px-4"
-                        aria-label="Επιλογή έκδοσης ειδήσεων"
-                    >
-                        <span>{country === 'Ελλάδα' ? 'Ελλάδα' : 'Παγκόσμια'}</span>
-                        <svg className="h-4 w-4 text-stone-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                           <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                    </button>
-                    {isDropdownOpen && (
-                        <div className="absolute right-0 mt-2 w-40 bg-white border border-stone-200 rounded-md shadow-lg z-30">
-                            <button
-                                onClick={() => { onCountryChange('Ελλάδα'); setIsDropdownOpen(false); }}
-                                className="block w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 transition-colors"
-                            >
-                                Ελλάδα
-                            </button>
-                            <button
-                                onClick={() => { onCountryChange(null); setIsDropdownOpen(false); }}
-                                className="block w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 transition-colors"
-                            >
-                                Παγκόσμια
-                            </button>
-                        </div>
-                    )}
+                <div className="flex items-center">
+                    <NotificationBell />
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className="flex items-center gap-2 text-stone-700 font-medium hover:text-stone-900 transition-colors focus:outline-none py-2 px-4"
+                            aria-label="Επιλογή έκδοσης ειδήσεων"
+                        >
+                            <span>{country === 'Ελλάδα' ? 'Ελλάδα' : 'Παγκόσμια'}</span>
+                            <svg className="h-4 w-4 text-stone-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                               <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                        {isDropdownOpen && (
+                            <div className="absolute right-0 mt-2 w-40 bg-white border border-stone-200 rounded-md shadow-lg z-30">
+                                <button
+                                    onClick={() => { onCountryChange('Ελλάδα'); setIsDropdownOpen(false); }}
+                                    className="block w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 transition-colors"
+                                >
+                                    Ελλάδα
+                                </button>
+                                <button
+                                    onClick={() => { onCountryChange(null); setIsDropdownOpen(false); }}
+                                    className="block w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 transition-colors"
+                                >
+                                    Παγκόσμια
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </header>

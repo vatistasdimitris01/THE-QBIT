@@ -36,7 +36,7 @@ const App: React.FC = () => {
         setStatus('success');
         
         // If the user is not looking at the page, send a notification that the news is ready.
-        if (document.visibilityState === 'hidden' && Notification.permission === 'granted') {
+        if (document.visibilityState === 'hidden' && 'Notification' in window && Notification.permission === 'granted') {
             navigator.serviceWorker.ready.then(registration => {
                 const options = {
                     body: 'Η καθημερινή σας σύνοψη ειδήσεων είναι έτοιμη. Κάντε κλικ για να τη δείτε.',
@@ -57,24 +57,14 @@ const App: React.FC = () => {
   }, []);
   
   useEffect(() => {
-    const setupServiceWorkerAndNotifications = () => {
+    const setupServiceWorker = () => {
       if ('serviceWorker' in navigator && 'PushManager' in window) {
-        navigator.serviceWorker.register('/service-worker.js')
+        // Construct the full URL to the service worker to avoid cross-origin issues
+        // in certain sandboxed environments.
+        const serviceWorkerUrl = new URL('/service-worker.js', window.location.origin).href;
+        navigator.serviceWorker.register(serviceWorkerUrl)
           .then(swReg => {
             console.log('Service Worker is registered', swReg);
-            // After registration, check for permission
-            if (Notification.permission === 'default') {
-              Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                  // Show a test notification to confirm subscription
-                  const options = {
-                    body: 'Θα λαμβάνετε ειδοποιήσεις για σημαντικές ενημερώσεις.',
-                    icon: '/favicon.svg',
-                  };
-                  swReg.showNotification('Οι ειδοποιήσεις ενεργοποιήθηκαν!', options);
-                }
-              });
-            }
           })
           .catch(error => {
             console.error('Service Worker Error', error);
@@ -82,7 +72,7 @@ const App: React.FC = () => {
       }
     };
     
-    setupServiceWorkerAndNotifications();
+    setupServiceWorker();
     loadNews(country);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
