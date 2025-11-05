@@ -1,8 +1,14 @@
-// Fix: Add missing Story and Annotation interfaces to resolve import error in StoryCard.tsx.
 export interface Annotation {
   term: string;
-  explanation?: string; // Explanation is now optional
-  importance: number; // Importance score (e.g., 1-3)
+  explanation?: string;
+  importance: number;
+  crossLinkStoryTitle?: string; // Links to another story's title
+}
+
+export interface Media {
+  type: 'image' | 'youtube';
+  src?: string; // For images
+  videoId?: string; // For YouTube videos
 }
 
 export interface Story {
@@ -12,6 +18,7 @@ export interface Story {
   summary: string;
   importance: number;
   annotations?: Annotation[];
+  media?: Media; // Media object for the story
 }
 
 export interface StorySource {

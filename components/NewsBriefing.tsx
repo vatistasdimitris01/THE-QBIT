@@ -79,7 +79,7 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
             <main className="space-y-12">
                 {content.stories.map((story, index) => (
                     <div key={story.id} ref={el => { storyRefs.current[index] = el; }}>
-                        <StoryCard story={story} />
+                        <StoryCard story={story} allStories={content.stories} />
                     </div>
                 ))}
             </main>
