@@ -1,25 +1,43 @@
 # Vercel Environment Variable Setup Guide for THE QBIT
 
-To deploy your news aggregator application on Vercel, you need to configure the following environment variable in your Vercel project settings. This keeps your API key secure and separate from your code.
+To deploy your news aggregator application on Vercel, you need to configure the following environment variables in your Vercel project settings. This keeps your API keys secure and separate from your code.
 
-## Required Environment Variable
+## Required Environment Variables
 
-You need to add one secret key to your Vercel project.
+You need to add three secret keys to your Vercel project.
 
 1.  **`API_KEY`**
     *   **Purpose**: This is your API key for the Google Gemini API, which generates the news briefings.
     *   **How to get it**: Visit Google AI Studio (https://aistudio.google.com/app/apikey) to create and copy your API key.
 
-## How to Add the Variable to Vercel
+2.  **`CSE_API_KEY`**
+    *   **Purpose**: This is the API key for the Google Custom Search JSON API, which the AI uses to find recent news articles.
+    *   **How to get it**:
+        1.  Go to the Google Cloud Console (https://console.cloud.google.com/).
+        2.  Create a new project or select an existing one.
+        3.  Go to "APIs & Services" > "Credentials".
+        4.  Click "Create Credentials" > "API key".
+        5.  **Important**: Make sure the "Custom Search API" is enabled for your project in the "Library" section.
+
+3.  **`CSE_ID`**
+    *   **Purpose**: This is the unique ID for your Programmable Search Engine instance. It tells Google which sites to search.
+    *   **How to get it**:
+        1.  Go to the Programmable Search Engine control panel (https://programmablesearchengine.google.com/).
+        2.  Create a new search engine.
+        3.  Configure it to search the entire web or specific news sites.
+        4.  On the "Basics" tab of the control panel, find and copy your "Search engine ID".
+
+## How to Add Variables to Vercel
 
 1.  Go to your project's dashboard on Vercel.
 2.  Click on the "Settings" tab.
 3.  In the left sidebar, click on "Environment Variables".
-4.  Add a new variable:
-    *   Enter the name `API_KEY`.
+4.  For each key above, add a new variable:
+    *   Enter the name (e.g., `API_KEY`).
     *   Paste the corresponding value.
     *   Ensure the type is "Secret".
     *   Click "Add".
-5.  After adding the variable, you may need to redeploy your project for the changes to take effect.
+5.  Repeat for all three variables.
+6.  After adding the variables, you may need to redeploy your project for the changes to take effect.
 
-**IMPORTANT:** Never expose this key in your frontend code or commit it to your Git repository. Using Vercel's environment variables is the correct and secure way to handle it.
+**IMPORTANT:** Never expose these keys in your frontend code or commit them to your Git repository. Using Vercel's environment variables is the correct and secure way to handle them.

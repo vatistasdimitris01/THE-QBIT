@@ -6,11 +6,27 @@ This project is built with React, TypeScript, and Tailwind CSS, and it uses the 
 
 ## Required Environment Variables
 
-To run this application, you need to configure the following environment variable.
+To run this application, you need to configure the following environment variables.
 
 1.  **`API_KEY`**
     *   **Purpose**: Your API key for the Google Gemini API, which generates the news briefings.
     *   **How to get it**: Visit Google AI Studio ([https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)) to create and copy your API key.
+
+2.  **`CSE_API_KEY`**
+    *   **Purpose**: The API key for the Google Custom Search JSON API, which the AI uses to find recent news articles.
+    *   **How to get it**:
+        1.  Go to the Google Cloud Console ([https://console.cloud.google.com/](https://console.cloud.google.com/)).
+        2.  Create a new project or select an existing one.
+        3.  Go to "APIs & Services" > "Credentials".
+        4.  Click "Create Credentials" > "API key".
+        5.  **Important**: Ensure the "Custom Search API" is enabled for your project in the "Library" section.
+
+3.  **`CSE_ID`**
+    *   **Purpose**: The unique ID for your Programmable Search Engine instance.
+    *   **How to get it**:
+        1.  Go to the Programmable Search Engine control panel ([https://programmablesearchengine.google.com/](https://programmablesearchengine.google.com/)).
+        2.  Create a new search engine (configure it to search the entire web).
+        3.  On the "Basics" tab of the control panel, find and copy your "Search engine ID".
 
 ---
 
@@ -24,9 +40,11 @@ To run the project locally, you need to have Node.js and npm installed.
     ```
 
 2.  **Set Up Environment Variables:**
-    Create a file named `.env` in the root of the project and add your key:
+    Create a file named `.env` in the root of the project and add your keys:
     ```
     API_KEY="your_gemini_api_key"
+    CSE_API_KEY="your_google_search_api_key"
+    CSE_ID="your_custom_search_engine_id"
     ```
 
 3.  **Run the Development Server:**
@@ -63,7 +81,7 @@ To run the project locally, you need to have Node.js and npm installed.
 
 3.  **Add Environment Variables to Vercel:**
     *   In your Vercel project settings, go to the **Environment Variables** tab.
-    *   Add the `API_KEY` with its corresponding value.
+    *   Add the `API_KEY`, `CSE_API_KEY`, and `CSE_ID` with their corresponding values.
     *   Ensure the type is "Secret".
 
 4.  **Redeploy:**
