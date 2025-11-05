@@ -2,15 +2,36 @@ import React, { useState } from 'react';
 
 interface AnnotationProps {
   term: string;
-  explanation: string;
+  explanation?: string;
+  importance: number;
 }
 
-const Annotation: React.FC<AnnotationProps> = ({ term, explanation }) => {
+const Annotation: React.FC<AnnotationProps> = ({ term, explanation, importance }) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const hasExplanation = explanation && explanation.trim() !== '';
+
   const toggleOpen = () => {
-    setIsOpen(!isOpen);
+    if (hasExplanation) {
+      setIsOpen(!isOpen);
+    }
   };
+  
+  const importanceStyles: { [key: number]: string } = {
+    1: 'border-orange-400/60',
+    2: 'border-orange-500/80 border-b-[2px]',
+    3: 'border-orange-600 border-b-[3px]',
+  };
+
+  const baseClasses = 'border-b transition-colors duration-200';
+  const hoverClasses = hasExplanation ? 'hover:border-orange-500' : '';
+  const cursorClass = hasExplanation ? 'cursor-pointer' : 'cursor-text';
+  
+  const finalClasses = `${baseClasses} ${importanceStyles[importance] || importanceStyles[1]} ${hoverClasses} ${cursorClass}`;
+
+  if (!hasExplanation) {
+    return <span className={finalClasses}>{term}</span>;
+  }
 
   return (
     <>
@@ -19,8 +40,8 @@ const Annotation: React.FC<AnnotationProps> = ({ term, explanation }) => {
         onKeyPress={(e) => e.key === 'Enter' && toggleOpen()}
         role="button"
         tabIndex={0}
-        className={`inline-flex items-baseline border-b-2 transition-colors duration-200 cursor-pointer ${
-          isOpen ? 'border-orange-500/80 text-orange-800' : 'border-orange-500/40 hover:border-orange-500/80'
+        className={`inline-flex items-baseline ${finalClasses} ${
+          isOpen ? 'text-orange-800' : ''
         }`}
         aria-expanded={isOpen}
       >

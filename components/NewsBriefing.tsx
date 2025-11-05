@@ -49,7 +49,7 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
                         for (let i = 0; i < splitParts.length; i++) {
                             newResult.push(splitParts[i]);
                             if (i < splitParts.length - 1) {
-                                newResult.push(<Annotation key={`${pIdx}-${anno.term}-${i}`} term={anno.term} explanation={anno.explanation} />);
+                                newResult.push(<Annotation key={`${pIdx}-${anno.term}-${i}`} term={anno.term} explanation={anno.explanation} importance={anno.importance} />);
                             }
                         }
                     } else {

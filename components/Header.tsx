@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import NotificationBell from './NotificationBell';
+import Weather from './Weather';
 
 interface HeaderProps {
     country: string | null;
@@ -26,9 +27,13 @@ const Header: React.FC<HeaderProps> = ({ country, onCountryChange }) => {
     return (
         <header className="py-3 px-4 sm:px-6 lg:px-8 border-b border-stone-200 bg-stone-50/90 backdrop-blur-sm sticky top-0 z-20">
             <div className="container mx-auto flex justify-between items-center gap-4">
-                <h1 className="text-2xl font-bold tracking-tight font-serif uppercase">
-                    THE QBIT
-                </h1>
+                <div className="flex items-center gap-4 md:gap-6">
+                    <h1 className="text-2xl font-bold tracking-tight font-serif uppercase">
+                        THE QBIT
+                    </h1>
+                    <Weather />
+                </div>
+
 
                 <div className="flex items-center">
                     <NotificationBell />
