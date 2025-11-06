@@ -1,3 +1,4 @@
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI, FunctionDeclaration, Type, Part } from "@google/genai";
 
@@ -113,9 +114,9 @@ const getBriefingPrompt = (date: Date, country?: string | null, category?: strin
     } else {
         searchTarget = country === 'Ελλάδα' ? 'την Ελλάδα' : 'τον κόσμο';
         selectionCriteria = `Επίλεξε ${storyCount} από τις πιο **σημαντικές** ειδήσεις για ${searchTarget}. Η επιλογή σου **πρέπει** να εστιάζει αποκλειστικά στους εξής τομείς:
-        - "Politics" (Πολιτική)
-        - "Economy" (Οικονομία)
-        - "Foreign Policy" (Εξωτερική πολιτική και διεθνείς σχέσεις της Ελλάδας)`;
+        - "Politics" (Πολιτική): Επικεντρώσου στα πολιτικά θέματα που **απασχολούν περισσότερο την κοινή γνώμη** και προκαλούν τις περισσότερες συζητήσεις αυτή τη στιγμή.
+        - "Economy" (Οικονομία): Οι κυριότερες οικονομικές εξελίξεις.
+        - "Foreign Policy" (Εξωτερική Πολιτική): Οι διεθνείς σχέσεις και η εξωτερική πολιτική της Ελλάδας.`;
     }
 
     return `
@@ -131,6 +132,7 @@ const getBriefingPrompt = (date: Date, country?: string | null, category?: strin
         *   **Βίντεο**: Αν βρεις σχετικό βίντεο YouTube, χρησιμοποίησε το videoId.
     4.  **Σε Βάθος Ανάλυση**: Για κάθε είδηση, γράψε μια **αναλυτική και διορατική ανάλυση 3-5 παραγράφων**. Μην κάνεις απλή περίληψη. Εξήγησε το γιατί, το πώς, και τις πιθανές συνέπειες.
     5.  **Annotations (Πορτοκαλί Στοιχεία)**: Για κάθε είδηση, εντόπισε **τουλάχιστον 10 σημαντικούς όρους-κλειδιά**. Η 'explanation' πρέπει να είναι μια **πλήρης, αναλυτική παράγραφος** που παρέχει βαθύ контекст, ιστορικό υπόβαθρο ή επεξήγηση.
+    6.  **Διαχείριση Σφαλμάτων**: Αν η αναζήτηση δεν επιστρέψει σχετικά αποτελέσματα, **ΠΡΕΠΕΙ** να επιστρέψεις ένα έγκυρο αντικείμενο JSON με έναν κενό πίνακα 'stories' και ένα 'dailySummary' που να εξηγεί ότι δεν βρέθηκαν ειδήσεις για τα δεδομένα κριτήρια.
 
     **Δομή Απάντησης JSON**:
     Η τελική σου απάντηση πρέπει να είναι ένα αντικείμενο JSON με τα εξής κλειδιά: 'greeting', 'intro', 'dailySummary', 'stories', 'outro'.
@@ -178,7 +180,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         };
 
         const chat = ai.chats.create({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-pro",
             config: config,
         });
 
