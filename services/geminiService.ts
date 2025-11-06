@@ -1,4 +1,4 @@
-import type { Briefing, Story } from '../types';
+import type { Briefing, Story, GenerationParams } from '../types';
 
 export async function getDailyBriefing(date: Date, country: string | null, location: { lat: number, lon: number } | null, category: string | null, signal: AbortSignal): Promise<{ briefing: Briefing, fromCache: boolean }> {
     const params = new URLSearchParams();
@@ -53,7 +53,7 @@ export async function getDailyBriefing(date: Date, country: string | null, locat
     }
 }
 
-export async function getSharedBriefing(shareId: string): Promise<Briefing> {
+export async function getShareParams(shareId: string): Promise<GenerationParams> {
     try {
         const response = await fetch(`/api/share/get?id=${shareId}`);
 
@@ -62,14 +62,14 @@ export async function getSharedBriefing(shareId: string): Promise<Briefing> {
              throw new Error(errorData.error || `Failed to load shared content (status ${response.status})`);
         }
         
-        const briefing: Briefing = await response.json();
-        return briefing;
+        const params: GenerationParams = await response.json();
+        return params;
 
     } catch (error) {
-        console.error("Error fetching shared briefing:", error);
+        console.error("Error fetching share params:", error);
         if (error instanceof Error) {
             throw error;
         }
-        throw new Error("Could not retrieve the shared briefing.");
+        throw new Error("Could not retrieve the share parameters.");
     }
 }

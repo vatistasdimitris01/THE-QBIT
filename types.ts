@@ -40,3 +40,10 @@ export interface Briefing {
   content: BriefingContent;
   sources: StorySource[];
 }
+
+export interface GenerationParams {
+  date: string; // ISO string for serialization
+  country: string | null;
+  category: string | null;
+  location: { lat: number; lon: number } | null;
+}

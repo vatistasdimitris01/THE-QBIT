@@ -4,8 +4,8 @@ import Footer from './components/Footer';
 import NewsBriefing from './components/NewsBriefing';
 import GenerationScreen from './components/LoadingSpinner';
 import InitialScreen from './components/InitialScreen';
-import { getDailyBriefing, getSharedBriefing } from './services/geminiService';
-import type { Briefing } from './types';
+import { getDailyBriefing, getShareParams } from './services/geminiService';
+import type { Briefing, GenerationParams } from './types';
 
 type AppStatus = 'initial' | 'loading' | 'error' | 'success';
 type Location = { lat: number, lon: number } | null;
@@ -19,58 +19,15 @@ const App: React.FC = () => {
   const [country, setCountry] = useState<string | null>('Ελλάδα');
   const [location, setLocation] = useState<Location>(null);
   const [isSharedView, setIsSharedView] = useState(false);
+  const [generationParams, setGenerationParams] = useState<GenerationParams | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    // Check for a share ID on initial load
-    const urlParams = new URLSearchParams(window.location.search);
-    const shareId = urlParams.get('share');
-
-    if (shareId) {
-        setIsSharedView(true);
-        setStatus('loading');
-        setLoadingMessage('Ανάκτηση κοινόχρηστης ενημέρωσης...');
-        
-        const loadShared = async () => {
-            try {
-                const fetchedBriefing = await getSharedBriefing(shareId);
-                setBriefing(fetchedBriefing);
-                setStatus('success');
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Δεν ήταν δυνατή η φόρτωση της κοινόχρηστης ενημέρωσης.");
-                setStatus('error');
-            }
-        };
-        loadShared();
-        return; // Stop further execution
-    }
-
-    // Get user's location once on initial load if not a shared view.
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          });
-        },
-        () => {
-          console.warn("Location access denied. Proceeding without it.");
-          setLocation(null);
-        },
-        { timeout: 5000 }
-      );
-    }
-    
-    // Cleanup function to abort fetch on component unmount
-    return () => {
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-    };
-  }, []);
-
-  const loadNews = useCallback(async (selectedCountry: string | null, category: string | null) => {
+  const loadNews = useCallback(async (params: {
+    country: string | null;
+    category: string | null;
+    date: Date;
+    location: Location;
+  }) => {
     if (abortControllerRef.current) {
         abortControllerRef.current.abort(); // Abort previous request if any
     }
@@ -81,16 +38,17 @@ const App: React.FC = () => {
     setBriefing(null);
     setError(null);
     setLoadTime(null);
+    setGenerationParams({ ...params, date: params.date.toISOString() });
     
-    if (category) {
-        setLoadingMessage(`Δημιουργία ενημέρωσης για ${category}...`);
+    if (params.category) {
+        setLoadingMessage(`Δημιουργία ενημέρωσης για ${params.category}...`);
     } else {
-        setLoadingMessage(selectedCountry ? `Δημιουργία ενημέρωσης για την ${selectedCountry}...` : "Δημιουργία παγκόσμιας ενημέρωσης...");
+        setLoadingMessage(params.country ? `Δημιουργία ενημέρωσης για την ${params.country}...` : "Δημιουργία παγκόσμιας ενημέρωσης...");
     }
 
     const startTime = performance.now();
     try {
-      const { briefing: fetchedBriefing } = await getDailyBriefing(new Date(), selectedCountry, location, category, controller.signal);
+      const { briefing: fetchedBriefing } = await getDailyBriefing(params.date, params.country, params.location, params.category, controller.signal);
       
       if (controller.signal.aborted) {
           console.log("News generation aborted.");
@@ -129,7 +87,60 @@ const App: React.FC = () => {
             abortControllerRef.current = null;
         }
     }
-  }, [location]);
+  }, []);
+
+  useEffect(() => {
+    // Check for a share ID on initial load
+    const urlParams = new URLSearchParams(window.location.search);
+    const shareId = urlParams.get('share');
+
+    if (shareId) {
+        setIsSharedView(true);
+        setStatus('loading');
+        setLoadingMessage('Ανάκτηση κοινόχρηστης ενημέρωσης...');
+        
+        const loadShared = async () => {
+            try {
+                const params = await getShareParams(shareId);
+                await loadNews({
+                    country: params.country,
+                    category: params.category,
+                    date: new Date(params.date),
+                    location: params.location,
+                });
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Δεν ήταν δυνατή η φόρτωση της κοινόχρηστης ενημέρωσης.");
+                setStatus('error');
+            }
+        };
+        loadShared();
+        return; // Stop further execution
+    }
+
+    // Get user's location once on initial load if not a shared view.
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          });
+        },
+        () => {
+          console.warn("Location access denied. Proceeding without it.");
+          setLocation(null);
+        },
+        { timeout: 5000 }
+      );
+    }
+    
+    // Cleanup function to abort fetch on component unmount
+    return () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+    };
+  }, [loadNews]);
   
   useEffect(() => {
     const setupServiceWorker = () => {
@@ -145,7 +156,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleStartBriefing = (category: string | null) => {
-    loadNews(country, category);
+    loadNews({ country, category, date: new Date(), location });
   };
   
   const handleGoHome = () => {
@@ -166,7 +177,7 @@ const App: React.FC = () => {
     setCountry(newCountry);
     // If a briefing is already loaded, reload it for the new country
     if (status === 'success' || status === 'error' || status === 'loading') {
-      loadNews(newCountry, null); // For simplicity, country change goes to general brief
+      loadNews({ country: newCountry, category: null, date: new Date(), location });
     }
   };
 
@@ -195,7 +206,7 @@ const App: React.FC = () => {
     }
 
     if (status === 'success' && briefing) {
-        return <NewsBriefing briefing={briefing} loadTime={loadTime} />;
+        return <NewsBriefing briefing={briefing} loadTime={loadTime} generationParams={generationParams} />;
     }
     
     return null;

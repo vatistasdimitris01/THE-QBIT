@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import type { Briefing } from '../types';
+import type { GenerationParams } from '../types';
 
 interface ShareButtonProps {
-    briefing: Briefing;
+    generationParams: GenerationParams | null;
 }
 
-const ShareButton: React.FC<ShareButtonProps> = ({ briefing }) => {
+const ShareButton: React.FC<ShareButtonProps> = ({ generationParams }) => {
     const [shareState, setShareState] = useState<'idle' | 'loading' | 'copied'>('idle');
 
     const handleShare = async () => {
+        if (!generationParams) {
+            console.error("No generation parameters available to share.");
+            return;
+        }
+        
         setShareState('loading');
         
         try {
@@ -16,7 +21,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({ briefing }) => {
             const response = await fetch('/api/share/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(briefing),
+                body: JSON.stringify(generationParams),
             });
 
             if (!response.ok) {
