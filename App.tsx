@@ -4,7 +4,7 @@ import Footer from './components/Footer';
 import NewsBriefing from './components/NewsBriefing';
 import GenerationScreen from './components/LoadingSpinner';
 import InitialScreen from './components/InitialScreen';
-import { getDailyBriefing, getShareParams } from './services/geminiService';
+import { getDailyBriefing } from './services/geminiService';
 import type { Briefing, GenerationParams } from './types';
 
 type AppStatus = 'initial' | 'loading' | 'error' | 'success';
@@ -18,8 +18,6 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [country, setCountry] = useState<string | null>('Ελλάδα');
   const [location, setLocation] = useState<Location>(null);
-  const [isSharedView, setIsSharedView] = useState(false);
-  const [generationParams, setGenerationParams] = useState<GenerationParams | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const loadNews = useCallback(async (params: {
@@ -38,7 +36,6 @@ const App: React.FC = () => {
     setBriefing(null);
     setError(null);
     setLoadTime(null);
-    setGenerationParams({ ...params, date: params.date.toISOString() });
     
     if (params.category) {
         setLoadingMessage(`Δημιουργία ενημέρωσης για ${params.category}...`);
@@ -90,34 +87,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Check for a share ID on initial load
-    const urlParams = new URLSearchParams(window.location.search);
-    const shareId = urlParams.get('share');
-
-    if (shareId) {
-        setIsSharedView(true);
-        setStatus('loading');
-        setLoadingMessage('Ανάκτηση κοινόχρηστης ενημέρωσης...');
-        
-        const loadShared = async () => {
-            try {
-                const params = await getShareParams(shareId);
-                await loadNews({
-                    country: params.country,
-                    category: params.category,
-                    date: new Date(params.date),
-                    location: params.location,
-                });
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Δεν ήταν δυνατή η φόρτωση της κοινόχρηστης ενημέρωσης.");
-                setStatus('error');
-            }
-        };
-        loadShared();
-        return; // Stop further execution
-    }
-
-    // Get user's location once on initial load if not a shared view.
+    // Get user's location once on initial load.
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -164,13 +134,8 @@ const App: React.FC = () => {
         abortControllerRef.current.abort();
     }
     
-    // If coming from a shared link, reload the page to the root.
-    if (isSharedView) {
-        window.location.href = window.location.origin;
-    } else {
-        setStatus('initial');
-        setBriefing(null);
-    }
+    setStatus('initial');
+    setBriefing(null);
   };
 
   const handleCountryChange = (newCountry: string | null) => {
@@ -182,7 +147,7 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (status === 'initial' && !isSharedView) {
+    if (status === 'initial') {
         return <InitialScreen onStartBriefing={handleStartBriefing} />;
     }
     
@@ -206,7 +171,7 @@ const App: React.FC = () => {
     }
 
     if (status === 'success' && briefing) {
-        return <NewsBriefing briefing={briefing} loadTime={loadTime} generationParams={generationParams} />;
+        return <NewsBriefing briefing={briefing} loadTime={loadTime} />;
     }
     
     return null;
@@ -217,9 +182,8 @@ const App: React.FC = () => {
       <Header 
         country={country}
         onCountryChange={handleCountryChange}
-        showHomeButton={status !== 'initial' || isSharedView}
+        showHomeButton={status !== 'initial'}
         onGoHome={handleGoHome}
-        isSharedView={isSharedView}
       />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 flex-grow w-full">
         {renderContent()}

@@ -52,24 +52,3 @@ export async function getDailyBriefing(date: Date, country: string | null, locat
         throw new Error("Δεν ήταν δυνατή η ανάκτηση των κορυφαίων ειδήσεων.");
     }
 }
-
-export async function getShareParams(shareId: string): Promise<GenerationParams> {
-    try {
-        const response = await fetch(`/api/share/get?id=${shareId}`);
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'This link may have expired or is invalid.' }));
-             throw new Error(errorData.error || `Failed to load shared content (status ${response.status})`);
-        }
-        
-        const params: GenerationParams = await response.json();
-        return params;
-
-    } catch (error) {
-        console.error("Error fetching share params:", error);
-        if (error instanceof Error) {
-            throw error;
-        }
-        throw new Error("Could not retrieve the share parameters.");
-    }
-}

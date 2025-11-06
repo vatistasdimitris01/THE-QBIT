@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import type { Briefing, GenerationParams } from '../types';
-import ShareButton from './ShareButton';
+import type { Briefing } from '../types';
 import SourceList from './SourceList';
 import StoryCard from './StoryCard';
 import ScrollProgressIndicator from './ScrollProgressIndicator';
@@ -8,10 +7,9 @@ import ScrollProgressIndicator from './ScrollProgressIndicator';
 interface NewsBriefingProps {
   briefing: Briefing;
   loadTime: number | null;
-  generationParams: GenerationParams | null;
 }
 
-const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime, generationParams }) => {
+const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime }) => {
     const { content, sources } = briefing;
     const [showLoadTime, setShowLoadTime] = useState(false);
     const [storiesLeft, setStoriesLeft] = useState(() => briefing.content.stories.length);
@@ -89,10 +87,9 @@ const NewsBriefing: React.FC<NewsBriefingProps> = ({ briefing, loadTime, generat
             <footer className="mt-16 pt-8 border-t border-stone-200">
                 <p className="text-center text-lg text-stone-700 mb-8">{content.outro}</p>
                 
-                <div className="flex justify-center relative mb-12">
-                    <ShareButton generationParams={generationParams} />
+                <div className="flex justify-center relative mb-12 h-8">
                     {showLoadTime && loadTime && (
-                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full whitespace-nowrap">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full whitespace-nowrap">
                             Φορτώθηκε σε {loadTime}ms
                         </div>
                     )}
