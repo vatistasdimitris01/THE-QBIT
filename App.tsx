@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import NewsBriefing from './components/NewsBriefing';
@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [country, setCountry] = useState<string | null>('Ελλάδα');
   const [location, setLocation] = useState<Location>(null);
   const [isSharedView, setIsSharedView] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     // Check for a share ID on initial load
@@ -60,9 +61,22 @@ const App: React.FC = () => {
         { timeout: 5000 }
       );
     }
+    
+    // Cleanup function to abort fetch on component unmount
+    return () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+    };
   }, []);
 
   const loadNews = useCallback(async (selectedCountry: string | null, category: string | null) => {
+    if (abortControllerRef.current) {
+        abortControllerRef.current.abort(); // Abort previous request if any
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setStatus('loading');
     setBriefing(null);
     setError(null);
@@ -76,8 +90,13 @@ const App: React.FC = () => {
 
     const startTime = performance.now();
     try {
-      const { briefing: fetchedBriefing } = await getDailyBriefing(new Date(), selectedCountry, location, category);
+      const { briefing: fetchedBriefing } = await getDailyBriefing(new Date(), selectedCountry, location, category, controller.signal);
       
+      if (controller.signal.aborted) {
+          console.log("News generation aborted.");
+          return;
+      }
+
       if (!fetchedBriefing.content.stories || fetchedBriefing.content.stories.length === 0) {
         setError("Δεν βρέθηκαν ειδήσεις για τη σημερινή επιλογή. Παρακαλώ δοκιμάστε ξανά αργότερα.");
         setStatus('error');
@@ -97,11 +116,18 @@ const App: React.FC = () => {
         }
       }
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+          console.log("News generation was aborted by the user.");
+          return; // Don't set an error state
+      }
       setError(err instanceof Error ? err.message : "Προέκυψε ένα άγνωστο σφάλμα.");
       setStatus('error');
     } finally {
         const endTime = performance.now();
         setLoadTime(Math.round(endTime - startTime));
+        if (abortControllerRef.current === controller) {
+            abortControllerRef.current = null;
+        }
     }
   }, [location]);
   
@@ -123,6 +149,10 @@ const App: React.FC = () => {
   };
   
   const handleGoHome = () => {
+    if (status === 'loading' && abortControllerRef.current) {
+        abortControllerRef.current.abort();
+    }
+    
     // If coming from a shared link, reload the page to the root.
     if (isSharedView) {
         window.location.href = window.location.origin;
@@ -135,7 +165,7 @@ const App: React.FC = () => {
   const handleCountryChange = (newCountry: string | null) => {
     setCountry(newCountry);
     // If a briefing is already loaded, reload it for the new country
-    if (status === 'success' || status === 'error') {
+    if (status === 'success' || status === 'error' || status === 'loading') {
       loadNews(newCountry, null); // For simplicity, country change goes to general brief
     }
   };

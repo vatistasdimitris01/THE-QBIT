@@ -207,6 +207,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const prompt = getBriefingPrompt(date, country, category);
         let result = await chat.sendMessage({ message: prompt });
         
+        // This flag will track if any function call cycle was productive.
+        let sourcesFound = false;
+
         while (true) {
             const functionCalls = result.functionCalls;
             if (!functionCalls || functionCalls.length === 0) { break; }
@@ -217,6 +220,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     const query = call.args?.query;
                     if (typeof query === 'string') {
                         const { searchResults, sources } = await searchWeb(query);
+                        if (sources.length > 0) {
+                            sourcesFound = true;
+                        }
                         allSources.push(...sources);
                         functionResponseParts.push({
                             functionResponse: {
@@ -229,6 +235,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
             
             result = await chat.sendMessage({ message: functionResponseParts });
+        }
+        
+        // **SAFETGUARD:** If after all searches, no sources were found,
+        // return a "no news" response directly to prevent AI errors.
+        if (!sourcesFound) {
+            console.log("No sources found from web search. Returning predefined 'no news' response.");
+            const noNewsBriefing: Briefing = {
+                content: {
+                    greeting: "Καλησπέρα",
+                    intro: "Ψάξαμε παντού, αλλά δεν βρήκαμε κάτι για σήμερα.",
+                    dailySummary: "Δεν εντοπίστηκαν σημαντικές ειδήσεις για τα κριτήρια που επιλέξατε. Αυτό μπορεί να συμβεί αν η ημερομηνία είναι στο μέλλον ή το θέμα είναι πολύ περιορισμένο. Παρακαλώ δοκιμάστε ξανά με διαφορετικές επιλογές.",
+                    stories: [],
+                    outro: "Ελπίζουμε να σας δούμε ξανά αύριο."
+                },
+                sources: [],
+            };
+            return res.status(200).json(noNewsBriefing);
         }
 
         rawResponseText = result.text;
