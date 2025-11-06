@@ -19,9 +19,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const shareId = nanoid(10); // Generate a 10-character unique ID
         const EXPIRATION_SECONDS = 86400; // 24 hours
 
-        // Store only the content to avoid exceeding KV size limits.
-        const briefingToStore: { content: BriefingContent } = {
-            content: briefing.content,
+        // Create a lightweight "shareable" version of the content.
+        // This version removes the detailed 'explanation' from every annotation
+        // to significantly reduce the overall data size. This prevents errors
+        // from Vercel KV's size limits and ensures sharing is reliable.
+        const lightweightContent: BriefingContent = {
+            ...briefing.content,
+            stories: briefing.content.stories.map(story => ({
+                ...story,
+                annotations: story.annotations?.map(({ explanation, ...rest }) => rest),
+            })),
+        };
+        
+        const briefingToStore = {
+            content: lightweightContent,
         };
 
         await kv.set(shareId, briefingToStore, { ex: EXPIRATION_SECONDS });

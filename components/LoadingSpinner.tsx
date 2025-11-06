@@ -8,28 +8,34 @@ const TOTAL_ESTIMATED_TIME = 45;
 
 const GenerationScreen: React.FC<GenerationScreenProps> = ({ message }) => {
     const [countdown, setCountdown] = useState(TOTAL_ESTIMATED_TIME);
-    const timerRef = useRef<number | null>(null);
+    const intervalRef = useRef<number | null>(null);
 
     useEffect(() => {
         setCountdown(TOTAL_ESTIMATED_TIME);
 
-        const updateTimer = () => {
+        // Clear any existing interval when the component re-renders
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+
+        intervalRef.current = window.setInterval(() => {
             setCountdown(prev => {
-                if (prev <= 1) {
-                    return 1; // Stay at 1, don't set a new timeout
+                if (prev > 1) {
+                    return prev - 1;
                 }
-                // Schedule the next update
-                timerRef.current = window.setTimeout(updateTimer, 1000);
-                return prev - 1;
+                
+                // When countdown reaches 1, stop the interval
+                if (intervalRef.current) {
+                    clearInterval(intervalRef.current);
+                }
+                return 1;
             });
-        };
+        }, 1000);
 
-        // Start the first tick
-        timerRef.current = window.setTimeout(updateTimer, 1000);
-
+        // Cleanup on component unmount
         return () => {
-            if (timerRef.current) {
-                clearTimeout(timerRef.current);
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
             }
         };
     }, [message]);
@@ -42,7 +48,9 @@ const GenerationScreen: React.FC<GenerationScreenProps> = ({ message }) => {
             <p className="mb-4 text-lg text-stone-800 tracking-wider font-medium">{message}</p>
             <div className="text-sm text-stone-500">
                 <p>Η τεχνητή νοημοσύνη αναλύει τα τελευταία γεγονότα...</p>
-                <p className="font-mono mt-4 text-base tracking-widest bg-stone-200/50 px-3 py-1 rounded-md">Εκτιμώμενος χρόνος: ~{countdown}s</p>
+                <p className="font-mono mt-4 text-base tracking-widest bg-stone-200/50 px-3 py-1 rounded-md">
+                   {countdown > 1 ? `Εκτιμώμενος χρόνος: ~${countdown}s` : 'Σχεδόν έτοιμο...'}
+                </p>
             </div>
         </div>
     );
