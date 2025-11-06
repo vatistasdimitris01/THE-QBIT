@@ -10,6 +10,7 @@ export interface Media {
   src?: string; // For images
   videoId?: string; // For YouTube videos
   alt?: string; // Description of the media
+  credit?: string; // Source of the media, e.g., 'cnn.gr'
 }
 
 export interface Story {

@@ -4,7 +4,7 @@ interface GenerationScreenProps {
     message: string;
 }
 
-const TOTAL_ESTIMATED_TIME = 30; // Increased for more realistic pacing
+const TOTAL_ESTIMATED_TIME = 45;
 
 const GenerationScreen: React.FC<GenerationScreenProps> = ({ message }) => {
     const [countdown, setCountdown] = useState(TOTAL_ESTIMATED_TIME);
@@ -15,23 +15,12 @@ const GenerationScreen: React.FC<GenerationScreenProps> = ({ message }) => {
 
         const updateTimer = () => {
             setCountdown(prev => {
-                if (prev > 10) {
-                    // Fast stage
-                    timerRef.current = window.setTimeout(updateTimer, 1000); // 1s interval
-                    return prev - 1;
+                if (prev <= 1) {
+                    return 1; // Stay at 1, don't set a new timeout
                 }
-                if (prev > 2) {
-                    // Slow stage
-                    timerRef.current = window.setTimeout(updateTimer, 2000); // Slower interval
-                    return prev - 1;
-                }
-                // Hold at 2s, then drop to 1s and stay there
-                if (prev === 2) {
-                     timerRef.current = window.setTimeout(updateTimer, 4000); // Long pause at 2s
-                     return prev - 1;
-                }
-                
-                return 1; // Stay at 1
+                // Schedule the next update
+                timerRef.current = window.setTimeout(updateTimer, 1000);
+                return prev - 1;
             });
         };
 

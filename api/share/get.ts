@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { kv } from '@vercel/kv';
-import type { Briefing } from '../../types';
+import type { Briefing, BriefingContent } from '../../types';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'GET') {
@@ -15,11 +15,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const briefing = await kv.get<Briefing>(id);
+        // Retrieve the stored object, which only contains the 'content' part.
+        const storedData = await kv.get<{ content: BriefingContent }>(id);
 
-        if (!briefing) {
+        if (!storedData) {
             return res.status(404).json({ error: 'Shared briefing not found or has expired.' });
         }
+
+        // Reconstruct the full Briefing object, adding an empty sources array.
+        const briefing: Briefing = {
+            content: storedData.content,
+            sources: [], // Sources are not stored for shared links to save space.
+        };
 
         return res.status(200).json(briefing);
 

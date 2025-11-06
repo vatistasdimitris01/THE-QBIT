@@ -12,6 +12,7 @@ interface Media {
   src?: string;
   videoId?: string;
   alt?: string;
+  credit?: string;
 }
 interface Annotation {
   term: string;
@@ -71,12 +72,23 @@ async function searchWeb(query: string): Promise<{ searchResults: any[], sources
             uri: item.link,
         }));
 
-        const searchResults = data.items.map((item: any) => ({
-            title: item.title,
-            link: item.link,
-            snippet: item.snippet,
-            image: item.pagemap?.cse_image?.[0]?.src || item.pagemap?.metatags?.[0]?.['og:image'] || null,
-        }));
+        const searchResults = data.items.map((item: any) => {
+            let sourceDomain = null;
+            try {
+                if (item.link) {
+                    sourceDomain = new URL(item.link).hostname.replace(/^www\./, '');
+                }
+            } catch (e) {
+                console.warn(`Invalid URL for source domain: ${item.link}`);
+            }
+            return {
+                title: item.title,
+                link: item.link,
+                snippet: item.snippet,
+                image: item.pagemap?.cse_image?.[0]?.src || item.pagemap?.metatags?.[0]?.['og:image'] || null,
+                sourceDomain: sourceDomain,
+            };
+        });
 
         return { searchResults, sources };
 
@@ -130,6 +142,7 @@ const getBriefingPrompt = (date: Date, country?: string | null, category?: strin
     3.  **Εύρεση Πολυμέσων (ΚΡΙΣΙΜΟ)**: Για κάθε είδηση, βρες ένα σχετικό οπτικό στοιχείο.
         *   **Εικόνες**: Το εργαλείο 'searchWeb' επιστρέφει τώρα ένα πεδίο 'image' για κάθε αποτέλεσμα. **Πρέπει να δώσεις απόλυτη προτεραιότητα στη χρήση αυτού του URL** για το πεδίο 'src' της εικόνας. Αν αυτό το URL δεν είναι έγκυρο ή δεν υπάρχει, τότε και μόνο τότε μπορείς να αναζητήσεις εναλλακτική. Το τελικό 'src' πρέπει να είναι ένα **πλήρες, λειτουργικό, δημόσια προσβάσιμο URL** που οδηγεί απευθείας στο αρχείο εικόνας (π.χ., .jpg). **ΑΠΑΓΟΡΕΥΕΤΑΙ ΑΥΣΤΗΡΑ** η χρήση placeholder URLs. Αν δεν μπορείς να βρεις μια πραγματική, έγκυρη εικόνα, όρισε ολόκληρο το αντικείμενο 'media' σε \`null\`.
         *   **Alt Text**: Για κάθε εικόνα, πρέπει να παρέχεις ένα σύντοτο, περιγραφικό κείμενο στο πεδίο 'alt'.
+        *   **Image Credit**: Το εργαλείο 'searchWeb' παρέχει ένα 'sourceDomain' για κάθε αποτέλεσμα. **Πρέπει** να χρησιμοποιήσεις αυτή την τιμή για το πεδίο 'credit' στο αντικείμενο 'media' για κάθε εικόνα που χρησιμοποιείς.
         *   **Βίντεο**: Αν βρεις σχετικό βίντεο YouTube, χρησιμοποίησε το videoId.
     4.  **Σε Βάθος Ανάλυση**: Για κάθε είδηση, γράψε μια **αναλυτική και διορατική ανάλυση 3-5 παραγράφων**. Μην κάνεις απλή περίληψη. Εξήγησε το γιατί, το πώς, και τις πιθανές συνέπειες.
     5.  **Annotations (Πορτοκαλί Στοιχεία)**: Για κάθε είδηση, εντόπισε **τουλάχιστον 10 σημαντικούς όρους-κλειδιά**. Η 'explanation' πρέπει να είναι μια **πλήρης, αναλυτική παράγραφος** που παρέχει βαθύ контекст, ιστορικό υπόβαθρο ή επεξήγηση.
@@ -148,7 +161,7 @@ const getBriefingPrompt = (date: Date, country?: string | null, category?: strin
     3.  'dailySummary': Μια παράγραφος που ξεκινά με την ημέρα, την ημερομηνία, και μια σταθερή ώρα (π.χ., 06:00), και συνοψίζει τις επικεφαλίδες.
     4.  'stories': Ένας πίνακας με **${storyCount}** αντικείμενα ειδήσεων. Κάθε αντικείμενο πρέπει να έχει:
         *   'category', 'title', 'summary' (με '\\n'), 'importance' (1-3).
-        *   'media': Αντικείμενο με 'type' ('image'/'youtube'), 'src'/'videoId', και 'alt', ή null.
+        *   'media': Αντικείμενο με 'type' ('image'/'youtube'), 'src'/'videoId', 'alt', και 'credit' (το domain της πηγής), ή null.
         *   'annotations': Ένας πίνακας με **τουλάχιστον 10** αντικείμενα, το καθένα με 'term', 'importance' (1-3), 'explanation'.
     5.  'outro': Μια σύντομη, στοχαστική πρόταση κλεισίματος. Παράδειγμα: "Και κάπως έτσι ξεκίνησε άλλη μια ${dayOfWeek}."
 

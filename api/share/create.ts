@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { kv } from '@vercel/kv';
 import { nanoid } from 'nanoid';
-import type { Briefing } from '../../types';
+import type { Briefing, BriefingContent } from '../../types';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
@@ -19,12 +19,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const shareId = nanoid(10); // Generate a 10-character unique ID
         const EXPIRATION_SECONDS = 86400; // 24 hours
 
-        await kv.set(shareId, briefing, { ex: EXPIRATION_SECONDS });
+        // Store only the content to avoid exceeding KV size limits.
+        const briefingToStore: { content: BriefingContent } = {
+            content: briefing.content,
+        };
+
+        await kv.set(shareId, briefingToStore, { ex: EXPIRATION_SECONDS });
 
         return res.status(200).json({ shareId });
 
     } catch (error) {
         console.error("Error creating share link:", error);
-        return res.status(500).json({ error: 'Failed to create shareable link.' });
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return res.status(500).json({ error: 'Failed to create shareable link.', details: errorMessage });
     }
 }

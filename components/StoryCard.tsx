@@ -82,9 +82,14 @@ const StoryCard: React.FC<StoryCardProps> = ({ story, allStories }) => {
                         <img 
                             src={media.src} 
                             alt={altText} 
-                            className="w-full h-auto object-cover" 
+                            className="w-full h-auto object-cover rounded-lg" 
                             onError={() => setImageError(true)} 
                         />
+                        {media.credit && (
+                            <p className="text-xs text-stone-500 mt-2 text-right pr-1">
+                                Πηγή: {media.credit}
+                            </p>
+                        )}
                     </div>
                 );
             case 'youtube':
