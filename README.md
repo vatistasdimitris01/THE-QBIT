@@ -4,9 +4,9 @@ This is a minimalist news aggregator that uses AI to find and summarize the top 
 
 This project is built with React, TypeScript, and Tailwind CSS, and it uses the Google Gemini API for content generation. It is configured for deployment on Vercel.
 
-## Required Environment Variables
+## Required Environment Variables (Vercel Setup)
 
-To run this application, you need to configure the following environment variables.
+Before running the application (either locally or deployed), you must configure the following environment variables in your Vercel project settings.
 
 1.  **`API_KEY`**
     *   **Purpose**: Your API key for the Google Gemini API, which generates the news briefings.
@@ -41,66 +41,65 @@ This project uses **Vercel KV** (a Redis-compatible key-value store) to handle s
 
 ## Local Development
 
-To run the project locally, you need to have Node.js and npm installed.
+To run the project locally, you'll need Node.js, npm, and the Vercel CLI. This setup uses the Vercel CLI to run the serverless API functions (`/api`) alongside the Vite frontend dev server.
 
-1.  **Install Dependencies:**
+1.  **Clone the Repository:**
+    Get a local copy of the project.
+
+2.  **Install Vercel CLI:**
+    If you don't have it already, install it globally:
+    ```bash
+    npm install -g vercel
+    ```
+
+3.  **Link to Vercel Project:**
+    Navigate to the project directory and link it to your Vercel project. This is crucial for fetching environment variables.
+    ```bash
+    vercel link
+    ```
+    Follow the prompts to connect to your Vercel account and the correct project.
+
+4.  **Pull Environment Variables:**
+    Once linked, pull your environment variables from Vercel. This will create a `.env.development.local` file with all the necessary keys you configured in the Vercel dashboard (including the Google API keys and the Vercel KV keys).
+    ```bash
+    vercel env pull .env.development.local
+    ```
+    **Note:** Ensure you have already added `API_KEY`, `CSE_API_KEY`, `CSE_ID` and connected the KV store in your Vercel project settings *before* running this command.
+
+5.  **Install Dependencies:**
+    Now, install the project's dependencies.
     ```bash
     npm install
     ```
 
-2.  **Set Up Environment Variables:**
-    Create a file named `.env` in the root of the project and add your keys. You will also need to get the Vercel KV variables for local development.
+6.  **Run the Development Server:**
+    Start the local development server.
+    ```bash
+    vercel dev
     ```
-    # Gemini and Google Search
-    API_KEY="your_gemini_api_key"
-    CSE_API_KEY="your_google_search_api_key"
-    CSE_ID="your_custom_search_engine_id"
-
-    # Vercel KV (for sharing feature)
-    # Go to your Vercel project -> Storage -> [Your KV Store] -> .env.local
-    # Copy and paste the variables here.
-    KV_URL="your_kv_url"
-    KV_REST_API_URL="your_kv_rest_api_url"
-    KV_REST_API_TOKEN="your_kv_rest_api_token"
-    KV_REST_API_READ_ONLY_TOKEN="your_kv_read_only_token"
-    ```
-
-3.  **Run the Development Server:**
-    This project uses the Vercel CLI to run the serverless API functions alongside the Vite frontend dev server.
-
-    *   **Install Vercel CLI:**
-        ```bash
-        npm install -g vercel
-        ```
-    *   **Run the app:**
-        ```bash
-        vercel dev
-        ```
-    This command will start the Vite server for the frontend and a server for your API functions, allowing them to work together. Open your browser to the URL provided (usually `http://localhost:3000`).
+    This command starts both the Vite server for the frontend and a local server for your API functions. Open your browser to the URL provided (usually `http://localhost:3000`).
 
 ---
 
 ## Deployment to Vercel
 
-**CRITICAL:** Since this project is now configured to use Vite, you must update your project settings in the Vercel dashboard.
+**CRITICAL:** This project is configured to use Vite. Ensure your project settings in the Vercel dashboard are correct.
 
 1.  **Push to GitHub:**
-    Commit all the new and updated files and push them to your GitHub repository.
+    Commit your code and push it to your GitHub repository linked to Vercel.
 
 2.  **Configure Vercel Project:**
-    *   Go to your project's dashboard on Vercel.
-    *   Click on the **Settings** tab.
-    *   Under **General**, change the **Framework Preset** from "Other" to **"Vite"**.
-    *   Vercel will automatically configure the correct Build and Output settings. They should be:
+    *   Go to your project's settings on Vercel.
+    *   Under **General**, set the **Framework Preset** to **"Vite"**.
+    *   Vercel will automatically configure the correct Build and Output settings:
         *   **Build Command:** `vite build`
         *   **Output Directory:** `dist`
         *   **Install Command:** `npm install`
     *   Save the changes.
 
-3.  **Add Environment Variables to Vercel:**
-    *   In your Vercel project settings, go to the **Environment Variables** tab.
-    *   Add the `API_KEY`, `CSE_API_KEY`, and `CSE_ID` with their corresponding values.
-    *   Ensure you have also connected the Vercel KV store as described above.
+3.  **Check Environment Variables & KV Store:**
+    *   Ensure your environment variables (`API_KEY`, `CSE_API_KEY`, `CSE_ID`) are set in the Vercel dashboard.
+    *   Confirm the Vercel KV store is connected under the **Storage** tab.
 
-4.  **Redeploy:**
-    *   Go to the **Deployments** tab and trigger a new deployment. Vercel will now use the Vite preset to correctly build and deploy your application.
+4.  **Deploy:**
+    *   Trigger a new deployment from the **Deployments** tab. Vercel will use the Vite preset to build and deploy your application.

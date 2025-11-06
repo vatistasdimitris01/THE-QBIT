@@ -1,1 +1,2 @@
-// This file is no longer used. Notification logic has been moved to components/NotificationManager.tsx
+// This file is no longer used and can be safely deleted.
+// Notification logic has been moved to components/NotificationManager.tsx
