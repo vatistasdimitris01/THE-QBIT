@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import type { Story } from '../types';
 import Annotation from './Annotation';
@@ -70,8 +71,8 @@ const StoryCard: React.FC<StoryCardProps> = ({ story, allStories }) => {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
-                                <p className="font-semibold mt-2 text-sm">This picture is no longer available.</p>
-                                <p className="text-xs">We apologize.</p>
+                                <p className="font-semibold mt-2 text-sm">Η εικόνα δεν είναι πλέον διαθέσιμη.</p>
+                                <p className="text-xs">Ζητούμε συγγνώμη.</p>
                             </div>
                         </div>
                     );
