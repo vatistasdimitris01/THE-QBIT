@@ -189,6 +189,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const country = typeof countryString === 'string' ? countryString : null;
     const category = typeof categoryString === 'string' ? categoryString : null;
     
+    // Validate that the requested date is not in the future.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Compare date part only to avoid timezone issues.
+    const requestDateForCompare = new Date(date);
+    requestDateForCompare.setHours(0, 0, 0, 0);
+
+    if (requestDateForCompare > today) {
+        console.log(`Request for a future date (${dateString}) detected. Returning 'no news' response.`);
+        const noNewsBriefing: Briefing = {
+            content: {
+                greeting: "Καλησπέρα",
+                intro: "Η επιλεγμένη ημερομηνία είναι στο μέλλον.",
+                dailySummary: "Δεν μπορούμε να προβλέψουμε τις ειδήσεις! Παρακαλώ επιλέξτε τη σημερινή ημερομηνία ή μια παλαιότερη.",
+                stories: [],
+                outro: "Ελπίζουμε να σας δούμε ξανά αύριο."
+            },
+            sources: [],
+        };
+        return res.status(200).json(noNewsBriefing);
+    }
+    
     let rawResponseText: string | undefined = "";
     const allSources: StorySource[] = [];
 
