@@ -53,7 +53,8 @@ const App: React.FC = () => {
       }
 
       if (!fetchedBriefing.content.stories || fetchedBriefing.content.stories.length === 0) {
-        setError("Δεν βρέθηκαν ειδήσεις για τη σημερινή επιλογή. Παρακαλώ δοκιμάστε ξανά αργότερα.");
+        const errorMessage = fetchedBriefing.content.dailySummary || "Δεν βρέθηκαν ειδήσεις για τη σημερινή επιλογή. Παρακαλώ δοκιμάστε ξανά αργότερα.";
+        setError(errorMessage);
         setStatus('error');
       } else {
         setBriefing(fetchedBriefing);
